@@ -16,8 +16,9 @@ const (
 )
 
 type noxRenderFade struct {
-	arr    [4]fade
-	frozen bool
+	arr     [4]fade
+	frozen  bool
+	painted [2][]fade
 }
 
 type fadeFlags int
@@ -40,17 +41,20 @@ type fade struct {
 	flags     fadeFlags
 	remaining int
 
-	doneFunc func()
-	drawFunc func(f *fade)
+	doneFunc    func()
+	advanceFunc func(f *fade)
+	drawFunc    func(f *fade)
 }
 
 func (r *NoxRender) FadeReset() {
+	r.fade.painted = [2][]fade{}
 	for i := range r.fade.arr {
 		r.fade.arr[i].flags = 0
 	}
 }
 
 func (r *NoxRender) FadeDisable() {
+	r.fade.painted = [2][]fade{}
 	for i := range r.fade.arr {
 		f := &r.fade.arr[i]
 		f.flags &^= fadeActive
@@ -66,6 +70,20 @@ func (r *NoxRender) SetFadeFrozen(frozen bool) {
 }
 
 func (r *NoxRender) DrawFade(menu bool) int {
+	layer := 0
+	if menu {
+		layer = 1
+	}
+	if r.fade.frozen {
+		// Include a fade's final painted frame even after its completion
+		// callback has removed it from the active list.
+		for i := range r.fade.painted[layer] {
+			f := &r.fade.painted[layer][i]
+			f.drawFunc(f)
+		}
+		return 0
+	}
+	r.fade.painted[layer] = r.fade.painted[layer][:0]
 	flags := fadeActive
 	if menu {
 		flags |= fadeMenu
@@ -76,10 +94,11 @@ func (r *NoxRender) DrawFade(menu bool) int {
 		if f.flags&mask != flags {
 			continue
 		}
-		f.drawFunc(f)
-		if r.fade.frozen {
-			continue
+		if f.advanceFunc != nil {
+			f.advanceFunc(f)
 		}
+		r.fade.painted[layer] = append(r.fade.painted[layer], *f)
+		f.drawFunc(f)
 		if f.remaining > 0 {
 			f.remaining--
 			continue
@@ -144,12 +163,12 @@ func (r *NoxRender) FadeInCinema(perc float32, t int, cl color.Color) bool {
 		cur = float32(0)
 		dv  = v / float32(t)
 	)
-	f.drawFunc = func(f *fade) {
+	f.advanceFunc = func(f *fade) {
 		if f.remaining != 0 {
 			cur += dv
 		}
-		r.drawFadeCinema(int(cur), cl)
 	}
+	f.drawFunc = func(*fade) { r.drawFadeCinema(int(cur), cl) }
 	return true
 }
 
@@ -164,14 +183,14 @@ func (r *NoxRender) FadeOutCinema(perc float32, t int, cl color.Color) bool {
 		dv   = v / float32(t)
 		flag = false
 	)
-	f.drawFunc = func(f *fade) {
+	f.advanceFunc = func(f *fade) {
 		if !flag {
 			r.StopFade(FadeInCinemaKey)
 			flag = true
 		}
 		cur -= dv
-		r.drawFadeCinema(int(cur), cl)
 	}
+	f.drawFunc = func(*fade) { r.drawFadeCinema(int(cur), cl) }
 	return true
 }
 
@@ -216,12 +235,12 @@ func (r *NoxRender) FadeInScreen(t int, menu bool, done func()) bool {
 		cur = float32(0)
 		dv  = float32(0xff) / float32(t)
 	)
-	f.drawFunc = func(f *fade) {
-		c := int(cur)
-		pix := r.PixBuffer()
-		r.drawFadeScreen(pix.Rect, c)
+	amount := int(cur)
+	f.advanceFunc = func(*fade) {
+		amount = int(cur)
 		cur += dv
 	}
+	f.drawFunc = func(*fade) { r.drawFadeScreen(r.PixBuffer().Rect, amount) }
 	return true
 }
 
@@ -240,12 +259,12 @@ func (r *NoxRender) FadeOutScreen(t int, menu bool, done func()) int {
 		cur = float32(0xff)
 		dv  = float32(0xff) / float32(t)
 	)
-	f.drawFunc = func(f *fade) {
-		c := int(cur)
-		pix := r.PixBuffer()
-		r.drawFadeScreen(pix.Rect, c)
+	amount := int(cur)
+	f.advanceFunc = func(*fade) {
+		amount = int(cur)
 		cur -= dv
 	}
+	f.drawFunc = func(*fade) { r.drawFadeScreen(r.PixBuffer().Rect, amount) }
 	r.StopFade(FadeClearScreenKey)
 	return 1
 }
