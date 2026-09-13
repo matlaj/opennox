@@ -160,6 +160,13 @@ func (c *Client) nox_xxx_clientDrawAll_436100_draw() {
 	noxflags.UnsetEngine(noxflags.EnginePause)
 	*memmap.PtrUint64(0x5D4594, 814532) = v0
 	*memmap.PtrUint32(0x5D4594, 811916) = c.srv.Frame()
+	c.drawClientFrame()
+}
+
+// drawClientFrame renders the world, the minimap and the debug overlays into the pixel
+// buffer. It is split out of nox_xxx_clientDrawAll_436100_draw, which keeps the tick
+// bookkeeping, so that interpolated frames between ticks can reuse it.
+func (c *Client) drawClientFrame() {
 	vp := c.Viewport()
 	if memmap.Uint32(0x587000, 85744) != 0 {
 		vp.Size.Y = vp.Size.X * nox_win_height / nox_win_width
@@ -181,6 +188,7 @@ func (c *Client) nox_xxx_clientDrawAll_436100_draw() {
 			}
 		}
 	}
+	restoreInterp := c.interpApply(vp)
 	if noxflags.HasEngine(noxflags.EngineNoRendering) {
 		legacy.Nox_xxx_clientDrawAll_436100_draw_A()
 	} else if c.ClientPlayerUnit() != nil && nox_client_isConnected() {
@@ -189,6 +197,7 @@ func (c *Client) nox_xxx_clientDrawAll_436100_draw() {
 	} else {
 		c.r.ClearScreen(color.Black)
 	}
+	restoreInterp()
 	c.DrawPerfmon(noxPerfmon)
 	if legacy.Get_dword_5d4594_811904() != 0 {
 		legacy.Sub_436F50()
@@ -293,6 +302,9 @@ func (c *Client) nox_xxx_drawAllMB_475810_draw(vp *noxrender.Viewport) {
 	c.drawSelection(vp)
 	c.nox_xxx_drawAllMB_475810_draw_E(vp)
 	r.partfx.Draw()
+	if !interpNoAdvance {
+		r.partfx.Update()
+	}
 	legacy.Sub_4C5060(vp)
 	c.nox_client_maybeDrawFrontWalls(vp)
 	r.DrawFade(false)
@@ -794,7 +806,9 @@ func (c *Client) sub_4695E0(a1, a2 int, pcl noxrender.RGB, a4 int, flip bool) {
 }
 
 func (c *Client) nox_xxx_tileDrawMB_481C20(vp *noxrender.Viewport) {
-	legacy.Inc_nox_xxx_waypointCounterMB_587000_154948()
+	if !interpNoAdvance {
+		legacy.Inc_nox_xxx_waypointCounterMB_587000_154948()
+	}
 	dp := vp.ToWorldPos(image.Pt(0, 0))
 	if !nox_client_texturedFloors_154956 && legacy.Get_dword_5d4594_1193156() == 1 {
 		nox_client_texturedFloors2_154960 = false

@@ -16,7 +16,8 @@ const (
 )
 
 type noxRenderFade struct {
-	arr [4]fade
+	arr    [4]fade
+	frozen bool
 }
 
 type fadeFlags int
@@ -56,6 +57,14 @@ func (r *NoxRender) FadeDisable() {
 	}
 }
 
+// SetFadeFrozen stops DrawFade from advancing fade timers. It is used when drawing
+// extra interpolated frames between game ticks: those frames must repaint the fade
+// overlay, but must not age it, or fades would run at the render rate instead of the
+// tick rate.
+func (r *NoxRender) SetFadeFrozen(frozen bool) {
+	r.fade.frozen = frozen
+}
+
 func (r *NoxRender) DrawFade(menu bool) int {
 	flags := fadeActive
 	if menu {
@@ -68,6 +77,9 @@ func (r *NoxRender) DrawFade(menu bool) int {
 			continue
 		}
 		f.drawFunc(f)
+		if r.fade.frozen {
+			continue
+		}
 		if f.remaining > 0 {
 			f.remaining--
 			continue

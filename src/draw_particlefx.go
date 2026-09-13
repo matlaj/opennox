@@ -146,6 +146,9 @@ func (pfx *partFXes) registerParticleFx(fnc func(t *particlefxType) bool, p *par
 	return 0
 }
 
+// Draw paints every particle. It does not advance any particle state, so it is safe
+// to call more than once per game tick when drawing interpolated frames. Update must
+// be called exactly once per tick to step the simulation.
 func (pfx *partFXes) Draw() {
 	for _, p := range pfx.byHandle { // TODO: this gives random order
 		if p.flags&8 == 0 {
@@ -153,6 +156,14 @@ func (pfx *partFXes) Draw() {
 				p.drawFunc(p)
 			}
 		}
+	}
+}
+
+// Update advances particle state by one game tick and reaps expired particles.
+// It was originally interleaved with Draw; the two were split so that the draw path
+// can run at the display rate while the simulation stays locked to the tick rate.
+func (pfx *partFXes) Update() {
+	for _, p := range pfx.byHandle { // TODO: this gives random order
 		if p.updateFunc != nil {
 			if !p.updateFunc(p) {
 				p.free()

@@ -92,14 +92,22 @@ func sub_437180() {
 	legacy.Sub_437180()
 }
 
-func nox_xxx_cliUpdateCameraPos_435600(x, y int) {
-	vp := noxClient.Viewport()
-	*memmap.PtrInt32(0x5D4594, 811364) = int32(vp.World.Max.X)
-	*memmap.PtrInt32(0x5D4594, 811368) = int32(vp.World.Max.Y)
+// setCameraPos aims the viewport at a world position. Nox centers the view on the
+// camera horizontally and anchors it to the bottom vertically, which is what pins the
+// player to the middle of the screen.
+func setCameraPos(vp *noxrender.Viewport, x, y int) {
 	vp.World.Min.X = x - vp.Size.X/2
 	vp.World.Min.Y = y + vp.Jiggle12 - vp.Size.Y/2
 	vp.World.Max.X = x
 	vp.World.Max.Y = y + vp.Jiggle12
+}
+
+func nox_xxx_cliUpdateCameraPos_435600(x, y int) {
+	vp := noxClient.Viewport()
+	*memmap.PtrInt32(0x5D4594, 811364) = int32(vp.World.Max.X)
+	*memmap.PtrInt32(0x5D4594, 811368) = int32(vp.World.Max.Y)
+	interpTrackCamera(image.Pt(x, y))
+	setCameraPos(vp, x, y)
 }
 
 var _ = [1]struct{}{}[52-unsafe.Sizeof(noxrender.Viewport{})]

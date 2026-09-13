@@ -88,7 +88,12 @@ func (c *Client) mainloopFrameLimit() {
 			return
 		}
 		if dt := nox_ticks_getNext(); dt > 0 {
-			c.srv.LoopSleep(dt)
+			if interpEnabled() {
+				// Spend the wait drawing interpolated frames instead of sleeping.
+				c.renderInterpUntil(dt)
+			} else {
+				c.srv.LoopSleep(dt)
+			}
 		}
 		return
 	}
