@@ -42,8 +42,7 @@ type Renderer struct {
 	rotate      bool
 	rotated     bool
 	onResize    []func(view image.Rectangle)
-	buf         *noximage.Image16
-	prev        *noximage.Image16
+	srcSz       image.Point
 }
 
 // Ticks returns the number of present ticks since the last Reset or Init.
@@ -73,13 +72,23 @@ func (r *Renderer) OnViewResize(fnc func(view image.Rectangle)) {
 	fnc(r.view)
 }
 
-// CopyBuffer copies given 16 bit image into the buffer and presents it.
+// CopyBuffer uploads the given 16 bit image and presents it.
 func (r *Renderer) CopyBuffer(img *noximage.Image16) {
 	r.present(img)
 }
 
 func (r *Renderer) present(img *noximage.Image16) {
-	sz := img.Size()
+	// A resize repaints without presenting a new image, so the size of the last one
+	// has to be remembered. Deriving the aspect ratio from a zero size would yield
+	// NaN, and the int conversions in setViewport turn that into a garbage viewport
+	// that reaches both OpenGL and every resize handler.
+	if sz := img.Size(); sz.X > 0 && sz.Y > 0 {
+		r.srcSz = sz
+	}
+	if r.srcSz.X <= 0 || r.srcSz.Y <= 0 {
+		return // nothing drawn yet, so there is no aspect ratio to fit
+	}
+	sz := r.srcSz
 	view := r.setViewport(float32(sz.X) / float32(sz.Y))
 	if r.view != view {
 		r.view = view
@@ -88,10 +97,6 @@ func (r *Renderer) present(img *noximage.Image16) {
 		}
 	}
 	if img != nil {
-		if r.buf == nil || r.buf.Rect != img.Rect {
-			r.buf = noximage.NewImage16(img.Rect)
-		}
-		copy(r.buf.Pix, img.Pix)
 		if bsz := r.backbuf.Size(); sz != bsz || r.filtering != r.backbufFilt {
 			Log.Printf("recreating surface: %dx%d -> %dx%d", bsz.X, bsz.Y, sz.X, sz.Y)
 			if r.backbuf != nil {
@@ -101,8 +106,7 @@ func (r *Renderer) present(img *noximage.Image16) {
 			r.backbuf = r.sc.NewSurface(sz, r.filtering)
 			r.backbufFilt = r.filtering
 		}
-		r.backbuf.Update(r.buf)
-		r.prev, r.buf = r.buf, r.prev
+		r.backbuf.Update(img)
 	}
 	r.sc.Clear()
 	r.backbuf.Draw(view)
