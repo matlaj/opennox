@@ -21,6 +21,7 @@ import (
 func init() {
 	viper.SetDefault(configVideoFiltering, true)
 	viper.SetDefault(configVideoStretch, false)
+	viper.SetDefault(configVideoVSync, false)
 }
 
 func (c *Client) initSeat(sz image.Point) error {
@@ -59,8 +60,10 @@ func (c *Client) initSeat(sz image.Point) error {
 
 	c.Win.SetFiltering(viper.GetBool(configVideoFiltering))
 	c.Win.SetStretched(viper.GetBool(configVideoStretch))
-	if err != nil {
-		return err
+	// Without vsync, frames are presented as soon as they are drawn and land at
+	// arbitrary points in the display refresh cycle; see interp.go for why that matters.
+	if err := c.Seat.SetVSync(viper.GetBool(configVideoVSync)); err != nil {
+		c.Log.Warn("cannot set vsync", "err", err)
 	}
 	sst.SetGamma(getGamma())
 	return nil

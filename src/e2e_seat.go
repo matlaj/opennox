@@ -56,6 +56,10 @@ func (e *e2eSeat) Present() {
 	e.s.Present()
 }
 
+func (e *e2eSeat) SetVSync(enable bool) error {
+	return e.s.SetVSync(enable)
+}
+
 func (e *e2eSeat) InputTick() {
 	e.s.InputTick()
 	e2eInputTick()

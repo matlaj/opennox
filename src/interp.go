@@ -208,9 +208,18 @@ func (c *Client) interpApply(vp *noxrender.Viewport) func() {
 	}
 }
 
+// interpLastFrame is how long the most recent extra frame took, presenting included.
+// With vsync on, the present blocks until the display is ready, so a frame can cost a
+// good deal more than the drawing itself.
+var interpLastFrame time.Duration
+
 // renderInterpUntil fills the time the main loop would otherwise sleep away with extra
 // interpolated frames, returning once the next tick is due. budget is the time left
 // until then.
+//
+// A frame is only started if the last one suggests it can finish in time. Overrunning
+// would push the next tick back and let the simulation itself fall behind, which is a
+// far worse artifact than the judder this is meant to remove.
 func (c *Client) renderInterpUntil(budget time.Duration) {
 	step := interpFrameInterval()
 	if step <= 0 {
@@ -223,13 +232,15 @@ func (c *Client) renderInterpUntil(budget time.Duration) {
 		if rem <= 0 {
 			return
 		}
-		if step >= rem {
+		if step+interpLastFrame >= rem {
 			// Not enough time left to place another frame before the tick.
 			c.srv.LoopSleep(rem)
 			return
 		}
 		c.srv.LoopSleep(step)
+		start := platform.Ticks()
 		c.renderInterpFrame()
+		interpLastFrame = platform.Ticks() - start
 	}
 }
 

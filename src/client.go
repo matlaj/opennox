@@ -28,6 +28,7 @@ func init() {
 const (
 	configVideoFiltering = "video.filtering"
 	configVideoStretch   = "video.stretch"
+	configVideoVSync     = "video.vsync"
 )
 
 func NewClient(log *slog.Logger, pr console.Printer, srv *Server) (*Client, error) {
