@@ -18,12 +18,14 @@ int nox_client_screenParticleDraw_489700(void* a1p, nox_screenParticle* p) {
 	xLeft.field_4 = p->field_28 >> 16;
 	if (xLeft.field_0 <= 0 || xLeft.field_4 <= 0 || xLeft.field_0 >= *(int*)(a1 + 32) ||
 		xLeft.field_4 >= *(int*)(a1 + 36)) {
-		sub_431700(p);
+		if (!nox_draw_repaint) sub_431700(p);
 		return 0;
 	}
 	sub_4B6720(&xLeft, p->field_8, p->field_40[0], p->field_40[0]);
 	nox_client_drawSetColor_434460(p->field_12);
 	nox_xxx_drawPointMB_499B70(xLeft.field_0, xLeft.field_4, p->field_40[0] >> 1);
+	// Extra frames repaint the particle without aging, spawning, or deleting it.
+	if (nox_draw_repaint) return 1;
 	char v3 = p->field_40[1];
 	p->field_20 += p->field_36;
 	if (v3) {

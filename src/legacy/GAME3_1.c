@@ -334,13 +334,15 @@ void sub_4BA670(int a1, int a2, int a3, int a4, int a5) {
 	a4a.field_4 = v7;
 	a5 = 0;
 	do {
-		if (v17) {
-			*getMemFloatPtr(0x5D4594, 1313856 + 4 * v17) = *getMemFloatPtr(0x5D4594, 1313856 + 4 * v17) + 0.25;
-		} else {
-			*getMemFloatPtr(0x5D4594, 1313856) = *getMemFloatPtr(0x5D4594, 1313856) + 0.2;
+		if (!nox_draw_repaint) {
+			if (v17) {
+				*getMemFloatPtr(0x5D4594, 1313856 + 4 * v17) = *getMemFloatPtr(0x5D4594, 1313856 + 4 * v17) + 0.25;
+			} else {
+				*getMemFloatPtr(0x5D4594, 1313856) = *getMemFloatPtr(0x5D4594, 1313856) + 0.2;
+			}
 		}
 		v18 = dword_5d4594_1316408;
-		if (*getMemFloatPtr(0x5D4594, 1313856 + 4 * v17) >= 1.0) {
+		if (!nox_draw_repaint && *getMemFloatPtr(0x5D4594, 1313856 + 4 * v17) >= 1.0) {
 			v19 = dword_5d4594_1316408 + 1;
 			if (dword_5d4594_1316408 + 1 > 0) {
 				v20 = getMemAt(0x5D4594, 1313872 + 28 * (v19 + 30 * v17));

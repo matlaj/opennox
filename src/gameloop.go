@@ -97,7 +97,13 @@ func (c *Client) mainloopFrameLimit() {
 		}
 		return
 	}
-	noxServer.RateWait()
+	if interpEnabled() && noxflags.HasGame(noxflags.GameClient) && !noxflags.HasGame(noxflags.GameHost) {
+		if dt := noxServer.RateRemaining(); dt > 0 {
+			c.renderInterpUntil(dt)
+		}
+	} else {
+		noxServer.RateWait()
+	}
 }
 
 func mainloopStop() {
@@ -327,6 +333,7 @@ func (c *Client) nox_game_cdMaybeSwitchState_413800() {
 }
 
 func nox_xxx_clientResetSpriteAndGui_4357D0(noSkip bool) bool {
+	interpReset()
 	c := noxClient
 	c.Log.Info("reset client state")
 	legacy.ClientSetPlayerNetCode(0)

@@ -259,10 +259,14 @@ func partfxDraw(p *particleFx) {
 		p.rendPart.DrawAt(pos2)
 	}
 	if dr := p.drawable12; dr != nil && p.drawableVp != nil {
-		prev := dr.Pos()
+		saved := *dr
 		dr.SetPos(pos1)
 		legacy.CallDrawFunc(dr, p.drawableVp)
-		dr.SetPos(prev)
+		if client.DrawRepaint {
+			*dr = saved
+		} else {
+			dr.SetPos(saved.Pos())
+		}
 	}
 	if p.pointSize != 0 {
 		cl := p.color

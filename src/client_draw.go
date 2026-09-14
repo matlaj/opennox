@@ -123,6 +123,7 @@ func (c *Client) nox_xxx_client_435F80_draw() bool {
 	} else {
 		sub_43CCA0()
 	}
+	interpBeginTick()
 	c.sub_49BD70(vp)
 	legacy.Sub_49BBC0()
 	legacy.Nox_xxx_polygonDrawColor_421B80()
@@ -167,6 +168,9 @@ func (c *Client) nox_xxx_clientDrawAll_436100_draw() {
 // buffer. It is split out of nox_xxx_clientDrawAll_436100_draw, which keeps the tick
 // bookkeeping, so that interpolated frames between ticks can reuse it.
 func (c *Client) drawClientFrame() {
+	if !client.DrawRepaint {
+		interpSkipFrame = memmap.Uint32(0x587000, 85744) != 0 || memmap.Uint32(0x5D4594, 1096520) != 0
+	}
 	vp := c.Viewport()
 	if memmap.Uint32(0x587000, 85744) != 0 {
 		vp.Size.Y = vp.Size.X * nox_win_height / nox_win_width
@@ -189,6 +193,7 @@ func (c *Client) drawClientFrame() {
 		}
 	}
 	restoreInterp := c.interpApply(vp)
+	defer restoreInterp()
 	if noxflags.HasEngine(noxflags.EngineNoRendering) {
 		legacy.Nox_xxx_clientDrawAll_436100_draw_A()
 	} else if c.ClientPlayerUnit() != nil && nox_client_isConnected() {
@@ -257,10 +262,12 @@ func (c *Client) sub_468F80(vp *noxrender.Viewport) {
 func (c *Client) nox_xxx_drawAllMB_475810_draw(vp *noxrender.Viewport) {
 	r := c.r
 	c.nox_xxx_drawAllMB_475810_draw_A(vp)
-	if vp.Jiggle12 < 0 {
-		vp.Jiggle12 = -1 - vp.Jiggle12
-	} else if vp.Jiggle12 > 0 {
-		vp.Jiggle12 = 1 - vp.Jiggle12
+	if !client.DrawRepaint {
+		if vp.Jiggle12 < 0 {
+			vp.Jiggle12 = -1 - vp.Jiggle12
+		} else if vp.Jiggle12 > 0 {
+			vp.Jiggle12 = 1 - vp.Jiggle12
+		}
 	}
 	partViewportOff = vp.ToWorldPos(image.Pt(0, 0))
 	xmin := int(vp.World.Min.X) / common.GridStep
@@ -302,7 +309,7 @@ func (c *Client) nox_xxx_drawAllMB_475810_draw(vp *noxrender.Viewport) {
 	c.drawSelection(vp)
 	c.nox_xxx_drawAllMB_475810_draw_E(vp)
 	r.partfx.Draw()
-	if !interpNoAdvance {
+	if !client.DrawRepaint {
 		r.partfx.Update()
 	}
 	legacy.Sub_4C5060(vp)
@@ -314,7 +321,9 @@ func (c *Client) nox_xxx_drawAllMB_475810_draw(vp *noxrender.Viewport) {
 	if c.Debug.ShowSight {
 		c.DrawDebugSight(vp)
 	}
-	c.sub_45AB40()
+	if !client.DrawRepaint {
+		c.sub_45AB40()
+	}
 	r.SetRectFullScreen()
 	*memmap.PtrUint32(0x973F18, 68) = 1
 	c.sub_476680()
@@ -329,8 +338,10 @@ func (c *Client) sub_4765F0(vp *noxrender.Viewport) {
 			legacy.Set_nox_client_highResFloors_154952(0)
 			legacy.Set_nox_client_highResFrontWalls_80820(0)
 		}
-		c.val1096556 = vp.World.Min.X
-		c.val1096560 = vp.World.Min.Y
+		if !client.DrawRepaint {
+			c.val1096556 = vp.World.Min.X
+			c.val1096560 = vp.World.Min.Y
+		}
 	}
 }
 
@@ -806,7 +817,7 @@ func (c *Client) sub_4695E0(a1, a2 int, pcl noxrender.RGB, a4 int, flip bool) {
 }
 
 func (c *Client) nox_xxx_tileDrawMB_481C20(vp *noxrender.Viewport) {
-	if !interpNoAdvance {
+	if !client.DrawRepaint {
 		legacy.Inc_nox_xxx_waypointCounterMB_587000_154948()
 	}
 	dp := vp.ToWorldPos(image.Pt(0, 0))

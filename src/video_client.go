@@ -8,6 +8,7 @@ import (
 	"image/color"
 
 	"github.com/opennox/libs/ifs"
+	"github.com/opennox/libs/platform"
 
 	"github.com/opennox/opennox/v1/client/gui"
 	"github.com/opennox/opennox/v1/client/noxmovie"
@@ -62,7 +63,9 @@ func (c *Client) clientDraw() bool {
 }
 
 func (c *Client) copyPixBuffer() {
+	start := platform.Ticks()
 	c.Win.CopyBuffer(noxPixBuffer.img)
+	interpSchedule.ObservePresent(start, platform.Ticks())
 	*memmap.PtrUint32(0x973A20, 496)++
 }
 

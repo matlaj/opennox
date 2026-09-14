@@ -940,7 +940,7 @@ void sub_48DCF0(uint32_t* a1) {
 				*(uint32_t*)(v2 + 648) = a1a.field_0;
 				*(uint32_t*)(v2 + 652) = a1a.field_4;
 			}
-			if (gameFrame() > *(int*)(v2 + 640)) {
+			if (!nox_draw_repaint && gameFrame() > *(int*)(v2 + 640)) {
 				v22 = *(uint32_t*)(v2 + 688);
 				if (v22) {
 					*(uint32_t*)(v22 + 684) = *(uint32_t*)(v2 + 684);
@@ -2294,7 +2294,7 @@ int sub_495BF0(int a1, int a2, int a3) {
 	v13 = -1;
 	if (result <= 0) {
 		if (*(uint32_t*)(a1 + 12) == *(uint32_t*)(a1 + 32) && *(uint32_t*)(a1 + 16) == *(uint32_t*)(a1 + 36)) {
-			*(uint8_t*)(a2 + 56) = 0;
+			if (!nox_draw_repaint) *(uint8_t*)(a2 + 56) = 0;
 			return result;
 		}
 	} else {
@@ -2307,7 +2307,7 @@ int sub_495BF0(int a1, int a2, int a3) {
 			v5 += 2;
 			if (v3 >= result) {
 				if (*(uint32_t*)(a1 + 12) == *(uint32_t*)(a1 + 32) && *(uint32_t*)(a1 + 16) == *(uint32_t*)(a1 + 36)) {
-					*(uint8_t*)(a2 + 56) = 0;
+					if (!nox_draw_repaint) *(uint8_t*)(a2 + 56) = 0;
 					return result;
 				}
 				break;
@@ -2333,6 +2333,12 @@ int sub_495BF0(int a1, int a2, int a3) {
 		} while (v8 < *(unsigned char*)(a2 + 56));
 		v7 = v15;
 		v6 = v14;
+	}
+	if (nox_draw_repaint) {
+		*(uint32_t*)(a1 + 12) = v6;
+		*(uint32_t*)(a1 + 16) = v7;
+		nox_client_drawEnableAlpha_434560(0);
+		return 1;
 	}
 	v10 = *(unsigned char*)(a2 + 56);
 	if (v10 > 0) {
@@ -2397,7 +2403,7 @@ int sub_495D00(uint32_t* a1, int a2, uint32_t* a3) {
 		if (a1[3] == a1[8]) {
 			result = a1[9];
 			if (a1[4] == result) {
-				*(uint8_t*)(a2 + 56) = 0;
+				if (!nox_draw_repaint) *(uint8_t*)(a2 + 56) = 0;
 				return result;
 			}
 		}
@@ -2415,7 +2421,7 @@ int sub_495D00(uint32_t* a1, int a2, uint32_t* a3) {
 				if (a1[3] == a1[8]) {
 					result = a1[9];
 					if (a1[4] == result) {
-						*(uint8_t*)(a2 + 56) = 0;
+						if (!nox_draw_repaint) *(uint8_t*)(a2 + 56) = 0;
 						return result;
 					}
 				}
@@ -2460,6 +2466,10 @@ int sub_495D00(uint32_t* a1, int a2, uint32_t* a3) {
 			v11 = v15;
 			++v27;
 		} while (v18);
+	}
+	if (nox_draw_repaint) {
+		nox_client_drawEnableAlpha_434560(0);
+		return 1;
 	}
 	v19 = *(unsigned char*)(v12 + 56);
 	if (v19 > 0) {
@@ -2851,7 +2861,7 @@ void sub_49A6A0(nox_draw_viewport_t* vp, nox_drawable* dr) {
 					v4 = v11;
 				}
 			} else {
-				sub_49A880((int)v2);
+				if (!nox_draw_repaint) sub_49A880((int)v2);
 			}
 			v8 = v4;
 			if (!v4) {

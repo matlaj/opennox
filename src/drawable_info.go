@@ -41,6 +41,13 @@ func (c *Client) DrawSpinningSkull(vp *noxrender.Viewport, dr *client.Drawable) 
 	vp2.Screen.Max = videoGetWindowSize()
 	vp2.Size = videoGetWindowSize()
 	obj := c.info.skull
+	if client.DrawRepaint {
+		if obj == nil {
+			return
+		}
+		saved := *obj
+		defer func() { *obj = saved }()
+	}
 	if obj == nil {
 		obj = c.Nox_new_drawable_for_thing(c.Things.TypeByID("SpinningSkull").Index())
 		obj.ObjFlags |= 0x1000000
@@ -59,6 +66,13 @@ func (c *Client) DrawSpinningCrown(vp *noxrender.Viewport, dr *client.Drawable) 
 	vp2.Screen.Max = videoGetWindowSize()
 	vp2.Size = videoGetWindowSize()
 	obj := c.info.crown
+	if client.DrawRepaint {
+		if obj == nil {
+			return
+		}
+		saved := *obj
+		defer func() { *obj = saved }()
+	}
 	if obj == nil {
 		obj = c.Nox_new_drawable_for_thing(c.Things.TypeByID("SpinningCrown").Index())
 		obj.ObjFlags |= 0x1000000
@@ -77,6 +91,13 @@ func (c *Client) DrawFlagOn(vp *noxrender.Viewport, dr *client.Drawable, weapons
 	vp2.Screen.Max = videoGetWindowSize()
 	vp2.Size = videoGetWindowSize()
 	obj := c.info.flag
+	if client.DrawRepaint {
+		if obj == nil {
+			return
+		}
+		saved := *obj
+		defer func() { *obj = saved }()
+	}
 	if obj == nil {
 		obj = c.Nox_new_drawable_for_thing(c.Things.TypeByID("Flag").Index())
 		c.info.flag = obj

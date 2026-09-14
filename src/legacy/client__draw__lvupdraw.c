@@ -5,6 +5,7 @@
 
 //----- (004B7740) --------------------------------------------------------
 uint32_t* nox_thing_falling_sparks_draw_4B7740(int a1, int a2, nox_drawable* dr) {
+	if (nox_draw_repaint) return 0;
 	int a3 = dr;
 	int2* v3;         // edi
 	int v4;           // ebp

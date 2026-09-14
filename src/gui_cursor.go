@@ -3,6 +3,7 @@ package opennox
 import (
 	"image"
 
+	"github.com/opennox/opennox/v1/client"
 	"github.com/opennox/opennox/v1/client/noxrender"
 	"github.com/opennox/opennox/v1/legacy"
 	"github.com/opennox/opennox/v1/legacy/common/ccall"
@@ -22,7 +23,7 @@ func (c *Client) getCursorAnimFrame(ref *legacy.ImageRef, dt int) *noxrender.Ima
 		ind := (ts - int(anim.Field_3)) / (int(anim.Field_2_1) + 1)
 		if ind+1 >= len(imgs) {
 			ind = len(imgs) - 1
-			if anim.OnEnd != nil {
+			if anim.OnEnd != nil && !client.DrawRepaint {
 				ccall.CallVoidPtr(anim.OnEnd, ref.C())
 			}
 		}

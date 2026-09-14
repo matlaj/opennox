@@ -448,7 +448,7 @@ int nox_xxx_bookDrawFn_45C7D0(uint32_t* a1) {
 		return 1;
 	}
 	nox_client_wndGetPosition_46AA60(a1, &v25, &v24);
-	if (dword_5d4594_1046648) {
+	if (!nox_draw_repaint && dword_5d4594_1046648) {
 		v3 = 50;
 		do {
 			v19 = nox_common_randomIntMinMax_415FF0(3, 6, "C:\\NoxPost\\src\\Client\\Gui\\guibook.c", 1287);
@@ -464,16 +464,18 @@ int nox_xxx_bookDrawFn_45C7D0(uint32_t* a1) {
 		nox_xxx_clientPlaySoundSpecial_452D80(795, 100);
 		dword_5d4594_1046648 = 0;
 	}
-	v6 = 2;
-	do {
-		v20 = nox_common_randomIntMinMax_415FF0(2, 4, "C:\\NoxPost\\src\\Client\\Gui\\guibook.c", 1331);
-		v18 = nox_common_randomIntMinMax_415FF0(1, 2, "C:\\NoxPost\\src\\Client\\Gui\\guibook.c", 1330);
-		v7 = nox_common_randomIntMinMax_415FF0(0, 30, "C:\\NoxPost\\src\\Client\\Gui\\guibook.c", 1326);
-		v14 = v24 + v7;
-		v8 = nox_common_randomIntMinMax_415FF0(0, 30, "C:\\NoxPost\\src\\Client\\Gui\\guibook.c", 1325);
-		nox_client_newScreenParticle_431540(v1, v25 + v8, v14, 0, 0, 0, v18, v20, 1, 1);
-		--v6;
-	} while (v6);
+	if (!nox_draw_repaint) {
+		v6 = 2;
+		do {
+			v20 = nox_common_randomIntMinMax_415FF0(2, 4, "C:\\NoxPost\\src\\Client\\Gui\\guibook.c", 1331);
+			v18 = nox_common_randomIntMinMax_415FF0(1, 2, "C:\\NoxPost\\src\\Client\\Gui\\guibook.c", 1330);
+			v7 = nox_common_randomIntMinMax_415FF0(0, 30, "C:\\NoxPost\\src\\Client\\Gui\\guibook.c", 1326);
+			v14 = v24 + v7;
+			v8 = nox_common_randomIntMinMax_415FF0(0, 30, "C:\\NoxPost\\src\\Client\\Gui\\guibook.c", 1325);
+			nox_client_newScreenParticle_431540(v1, v25 + v8, v14, 0, 0, 0, v18, v20, 1, 1);
+			--v6;
+		} while (v6);
+	}
 	v22 = v24;
 	v21 = v25;
 	if (dword_5d4594_1046652 == 1) {
@@ -482,6 +484,7 @@ int nox_xxx_bookDrawFn_45C7D0(uint32_t* a1) {
 		v9 = nox_xxx_spellIcon_424A90(*(int*)&dword_5d4594_1047524);
 	}
 	nox_client_drawImageAt_47D2C0(v9, v21, v22);
+	if (nox_draw_repaint) return 1;
 	*(float*)&dword_5d4594_1046636 = *(float*)&dword_5d4594_1046636 + obj_5d4594_1046620.field_0;
 	*(float*)&dword_5d4594_1046640 = *(float*)&dword_5d4594_1046640 + obj_5d4594_1046620.field_4;
 	if ((double)*getMemIntPtr(0x5D4594, 1046668) <= *(float*)&dword_5d4594_1046636 &&

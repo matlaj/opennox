@@ -7,6 +7,7 @@
 
 //----- (004B7810) --------------------------------------------------------
 int nox_thing_blue_rain_draw(int a1, nox_drawable* dr) {
+	if (nox_draw_repaint) return 1;
 	int v3; // ebx
 	int v4; // ebp
 	int v5; // eax

@@ -32,6 +32,7 @@ func (c *Client) Nox_xxx_spriteCreate_48E970(typeID int, code uint16, x, y int) 
 			c.Objs.MinimapAdd(dr, 1)
 		}
 	}
+	interpTrackDrawable(dr)
 	dr.SetActive()
 	c.Objs.DeadlineRemove(dr)
 	c.Objs.Ext.Attach(dr)
@@ -41,6 +42,9 @@ func (c *Client) Nox_xxx_spriteCreate_48E970(typeID int, code uint16, x, y int) 
 }
 
 func (c *Client) Nox_new_drawable_for_thing(typeID int) *client.Drawable {
+	if client.DrawRepaint {
+		return nil
+	}
 	dr := c.Objs.New()
 	if dr == nil {
 		dr = c.nox_xxx_spriteFromCache_45A330_drawable()
@@ -178,6 +182,7 @@ func sub_495F70(dr *client.Drawable) {
 }
 
 func (c *Client) Nox_xxx_spriteDeleteAll_45A5E0(a1 bool) {
+	interpReset()
 	var next *client.Drawable
 	for dr := c.Objs.List1; dr != nil; dr = next {
 		next = dr.NextPtr
@@ -196,6 +201,9 @@ func (c *Client) nox_xxx_spriteFromCache_45A330_drawable() *client.Drawable {
 }
 
 func (c *Client) Nox_xxx_spriteDeleteStatic_45A4E0_drawable(dr *client.Drawable) {
+	if client.DrawRepaint {
+		return
+	}
 	//c.Objs.Ext.Delete(dr)
 	if dr.Field_93 != nil {
 		dr.Field_93.NextPtr = dr.NextPtr
@@ -294,6 +302,10 @@ func (c *Client) nox_xxx_clientDeleteSprite_476F10_drawable(dr *client.Drawable)
 }
 
 func (c *Client) Nox_xxx_spriteDelete_45A4B0(dr *client.Drawable) int {
+	if client.DrawRepaint {
+		return 0
+	}
+	interpForgetDrawable(dr)
 	c.sub_495B00(dr)
 	c.Objs.Alloc.FreeObjectFirst(dr)
 	c.Objs.Count--

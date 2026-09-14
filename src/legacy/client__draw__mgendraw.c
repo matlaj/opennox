@@ -75,12 +75,14 @@ int nox_thing_monster_gen_draw(int* a1, nox_drawable* dr) {
 		if (v7 < 0) {
 			v7 = 0;
 		}
-		v11 = v10 - 1;
-		*(unsigned int*)(v2 + 432) = v11;
-		if (!v11) {
-			v12 = *(unsigned int*)(v2 + 280);
-			BYTE1(v12) = BYTE1(v12) & 0xFB | 8;
-			*(unsigned int*)(v2 + 280) = v12;
+		if (!nox_draw_repaint) {
+			v11 = v10 - 1;
+			*(unsigned int*)(v2 + 432) = v11;
+			if (!v11) {
+				v12 = *(unsigned int*)(v2 + 280);
+				BYTE1(v12) = BYTE1(v12) & 0xFB | 8;
+				*(unsigned int*)(v2 + 280) = v12;
+			}
 		}
 	}
 	nox_xxx_drawObject_4C4770_draw(a1, (unsigned char*)v2, *(unsigned int*)(v20 + 4 * v7));

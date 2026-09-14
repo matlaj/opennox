@@ -4,7 +4,6 @@ package opennox
 
 import (
 	"image"
-	"math"
 	"time"
 
 	"github.com/spf13/viper"
@@ -14,6 +13,7 @@ import (
 	"github.com/opennox/opennox/v1/client"
 	"github.com/opennox/opennox/v1/client/noxrender"
 	noxflags "github.com/opennox/opennox/v1/common/flags"
+	"github.com/opennox/opennox/v1/internal/frameinterp"
 	"github.com/opennox/opennox/v1/legacy"
 )
 
@@ -32,6 +32,13 @@ import (
 // positions. Positions stay integers, so the legacy C draw code and its fixed struct
 // layouts are untouched; they simply receive a different integer each frame.
 //
+// Ordinary tick draws run callbacks at authoritative positions, then repaint at
+// interpolated positions before presenting. This costs an additional draw per tick
+// while enabled, but keeps effect updates independent of the presentation clock.
+// Repaint callbacks must use DrawRepaint (nox_draw_repaint in C) to skip persistent
+// updates. Drawable snapshots protect render caches; they do not undo changes to
+// external lists, allocations, or effect histories.
+//
 // Note that interpolating rather than extrapolating means the picture trails the
 // simulation by one tick (~33ms). That is the standard trade and it is why this is
 // behind a flag.
@@ -41,20 +48,10 @@ const (
 	configVideoMaxFPS        = "video.max_fps"
 )
 
-// interpMaxStep2 is the squared distance beyond which a drawable is assumed to have
-// teleported rather than moved, and is drawn at its current position instead of being
-// smeared across the map. It matches one spatial index bucket (Nox_drawable_2d_div).
-const interpMaxStep2 = client.Nox_drawable_2d_div * client.Nox_drawable_2d_div
-
 func init() {
 	viper.SetDefault(configVideoInterpolation, false)
 	viper.SetDefault(configVideoMaxFPS, 60)
 }
-
-// interpNoAdvance is set while drawing an extra frame between ticks. Draw code that
-// also steps state must check it and skip the state change; the drawing itself still
-// has to happen or the affected element would flicker at the tick rate.
-var interpNoAdvance bool
 
 func interpEnabled() bool {
 	return viper.GetBool(configVideoInterpolation)
@@ -83,81 +80,66 @@ func interpTickDur() time.Duration {
 	return time.Second / time.Duration(rate)
 }
 
-// interpAlpha reports how far the current real time has progressed through the
-// current tick, as a fraction in [0,1]. nox_ticks_getNext reports the time still
-// owed to this tick, measured against a baseline that only resets on a hitch.
+// Remote timestamps need a local clock: the host's simulation sleep baseline
+// does not describe packet arrival times on a joined client.
+var interpTimeline frameinterp.Timeline
+var interpCam frameinterp.Track
+var interpObjects = make(map[*client.Drawable]frameinterp.Track)
+
+func interpReset() {
+	interpTimeline = frameinterp.Timeline{}
+	interpCam = frameinterp.Track{}
+	clear(interpObjects)
+	interpSchedule.Reset()
+	interpSkipFrame = false
+}
+
+func interpBeginTick() {
+	if !interpEnabled() {
+		interpReset()
+		return
+	}
+	interpTimeline.Observe(noxServer.Frame(), platform.Ticks())
+}
+
+func interpTrackDrawable(dr *client.Drawable) {
+	if !interpEnabled() {
+		return
+	}
+	t := interpObjects[dr]
+	t.Observe(noxServer.Frame(), dr.Pos())
+	interpObjects[dr] = t
+}
+
+func interpForgetDrawable(dr *client.Drawable) { delete(interpObjects, dr) }
+
+func interpTrackCamera(pos image.Point) {
+	interpCam.Observe(noxServer.Frame(), pos)
+}
+
 func interpAlpha() float64 {
-	a := 1 - float64(nox_ticks_getNext())/float64(interpTickDur())
-	if a < 0 {
-		return 0
+	if !noxflags.HasGame(noxflags.GameHost) {
+		return interpTimeline.Alpha(platform.Ticks(), interpTickDur())
 	}
-	if a > 1 {
-		return 1
-	}
-	return a
+	return min(1, max(0, 1-float64(nox_ticks_getNext())/float64(interpTickDur())))
 }
 
 func interpLerp(prev, cur image.Point, alpha float64) image.Point {
-	d := cur.Sub(prev)
-	return image.Point{
-		X: prev.X + int(math.Round(float64(d.X)*alpha)),
-		Y: prev.Y + int(math.Round(float64(d.Y)*alpha)),
-	}
+	return frameinterp.Lerp(prev, cur, alpha)
 }
 
-// interpCamTrack remembers the last two camera positions the server sent, along with
-// the ticks they arrived on.
-type interpCamTrack struct {
-	prev, cur           image.Point
-	prevFrame, curFrame uint32
-	valid               bool
-}
-
-var interpCam interpCamTrack
-
-// interpTrackCamera records a camera position pushed by the server. It is called from
-// nox_xxx_cliUpdateCameraPos_435600, which may fire more than once per tick, so the
-// previous position only rolls over when the tick actually changes.
-func interpTrackCamera(pos image.Point) {
-	fr := noxServer.Frame()
-	if !interpCam.valid {
-		interpCam = interpCamTrack{prev: pos, cur: pos, prevFrame: fr, curFrame: fr, valid: true}
-		return
-	}
-	if fr != interpCam.curFrame {
-		interpCam.prev, interpCam.prevFrame = interpCam.cur, interpCam.curFrame
-	}
-	interpCam.cur, interpCam.curFrame = pos, fr
-}
-
-// interpCameraAt returns the camera position for the given point within the tick.
-// It reports false when the last two updates were not exactly one tick apart, or when
-// the camera jumped far enough to be a teleport or a map change; in both cases the
-// caller keeps the position the server gave it.
 func interpCameraAt(alpha float64) (image.Point, bool) {
-	t := interpCam
-	if !t.valid || t.curFrame != noxServer.Frame() || t.curFrame != t.prevFrame+1 {
-		return image.Point{}, false
-	}
-	d := t.cur.Sub(t.prev)
-	if d.X == 0 && d.Y == 0 {
-		return image.Point{}, false
-	}
-	if d.X*d.X+d.Y*d.Y > interpMaxStep2 {
-		return image.Point{}, false
-	}
-	return interpLerp(t.prev, t.cur, alpha), true
+	return interpCam.At(noxServer.Frame(), alpha, client.Nox_drawable_2d_div)
 }
 
-type interpSavedPos struct {
-	dr  *client.Drawable
-	pos image.Point
+type interpSavedDrawable struct {
+	dr    *client.Drawable
+	state client.Drawable
 }
 
-// interpSaved holds the true positions displaced by the current draw, so they can be
-// put back afterwards. It is reused between frames to keep the draw path allocation
+// interpSaved holds authoritative drawable state displaced by the current draw. It is reused between frames to keep the draw path allocation
 // free.
-var interpSaved []interpSavedPos
+var interpSaved []interpSavedDrawable
 
 // interpApply moves the camera and every eligible drawable to where they were part way
 // through the current tick, and returns a function that puts them all back. It is a
@@ -167,102 +149,79 @@ var interpSaved []interpSavedPos
 // before that was on the immediately preceding tick. Anything updated less often has
 // no usable pair of endpoints and is left alone.
 func (c *Client) interpApply(vp *noxrender.Viewport) func() {
-	if !interpEnabled() {
+	return c.interpApplyAt(vp, interpAlpha())
+}
+
+func (c *Client) interpApplyAt(vp *noxrender.Viewport, alpha float64) func() {
+	if !interpEnabled() || !client.DrawRepaint {
 		return func() {}
 	}
-	alpha := interpAlpha()
 
-	savedWorld := vp.World
-	camMoved := false
+	savedViewport := *vp
 	if pos, ok := interpCameraAt(alpha); ok {
 		setCameraPos(vp, pos.X, pos.Y)
-		camMoved = true
 	}
 
 	interpSaved = interpSaved[:0]
 	frame := c.srv.Frame()
 	for dr := c.Objs.FirstList1(); dr != nil; dr = dr.NextPtr {
-		if dr.Field_5 != frame || dr.Field_5 != dr.Field_10+1 {
-			continue
+		// Legacy drawing fills visibility/light caches in the drawable. Keep
+		// those writes local to this repaint as well as the displaced position.
+		interpSaved = append(interpSaved, interpSavedDrawable{dr: dr, state: *dr})
+		if pos, ok := interpObjects[dr].At(frame, alpha, client.Nox_drawable_2d_div); ok {
+			dr.SetPos(pos)
 		}
-		cur, prev := dr.Pos(), dr.Point8()
-		d := cur.Sub(prev)
-		if d.X == 0 && d.Y == 0 {
-			continue
-		}
-		if d.X*d.X+d.Y*d.Y > interpMaxStep2 {
-			continue
-		}
-		interpSaved = append(interpSaved, interpSavedPos{dr: dr, pos: cur})
-		dr.SetPos(interpLerp(prev, cur, alpha))
 	}
 
+	restored := false
 	return func() {
+		if restored {
+			return
+		}
+		restored = true
 		for _, it := range interpSaved {
-			it.dr.SetPos(it.pos)
+			*it.dr = it.state
 		}
 		interpSaved = interpSaved[:0]
-		if camMoved {
-			vp.World = savedWorld
-		}
+		*vp = savedViewport
 	}
 }
 
-// interpLastFrame is how long the most recent extra frame took, presenting included.
-// With vsync on, the present blocks until the display is ready, so a frame can cost a
-// good deal more than the drawing itself.
-var interpLastFrame time.Duration
+var interpSchedule frameinterp.Scheduler
 
-// renderInterpUntil fills the time the main loop would otherwise sleep away with extra
-// interpolated frames, returning once the next tick is due. budget is the time left
-// until then.
-//
-// A frame is only started if the last one suggests it can finish in time. Overrunning
-// would push the next tick back and let the simulation itself fall behind, which is a
-// far worse artifact than the judder this is meant to remove.
+// Keep one-shot clears visible until the next ordinary world draw.
+var interpSkipFrame bool
+
 func (c *Client) renderInterpUntil(budget time.Duration) {
-	step := interpFrameInterval()
-	if step <= 0 {
-		c.srv.LoopSleep(budget)
-		return
-	}
-	deadline := platform.Ticks() + budget
-	for {
-		rem := deadline - platform.Ticks()
-		if rem <= 0 {
-			return
-		}
-		if step+interpLastFrame >= rem {
-			// Not enough time left to place another frame before the tick.
-			c.srv.LoopSleep(rem)
-			return
-		}
-		c.srv.LoopSleep(step)
-		start := platform.Ticks()
-		c.renderInterpFrame()
-		interpLastFrame = platform.Ticks() - start
-	}
+	interpSchedule.Run(platform.Ticks()+budget, interpFrameInterval(), platform.Ticks,
+		c.srv.LoopSleep, c.drawInterpFrame, c.copyPixBuffer)
 }
 
-// renderInterpFrame draws and presents one extra frame between ticks. It deliberately
-// skips the parts of the tick frame that step state rather than draw: screen particles
-// advance and spawn inside their own draw callbacks, and a screenshot is a one-shot
-// request that belongs to the tick that asked for it.
-func (c *Client) renderInterpFrame() {
+func (c *Client) drawInterpFrame() bool {
+	if interpSkipFrame || interpFrameInterval() <= 0 {
+		return false
+	}
 	if noxflags.HasEngine(noxflags.EnginePause) || noxflags.HasEngine(noxflags.EngineNoRendering) {
-		return
+		return false
 	}
 	if nox_client_gui_flag_815132 != 0 || nox_xxx_checkGameFlagPause_413A50() {
-		return
+		return false
 	}
 	if c.ClientPlayerUnit() == nil || !nox_client_isConnected() {
-		return
+		return false
 	}
-	interpNoAdvance = true
+	start := platform.Ticks()
+	defer func() { interpSchedule.ObserveDraw(start, platform.Ticks()) }()
+	legacy.SetDrawRepaint(true)
 	c.r.SetFadeFrozen(true)
+	// Procedural visuals use the legacy RNGs too. Repaints must not change
+	// the sequence consumed by the next simulation tick.
+	logic, other := c.srv.Rand.Logic.Index(), c.srv.Rand.Other.Index()
 	defer func() {
-		interpNoAdvance = false
+		legacy.SetDrawRepaint(false)
 		c.r.SetFadeFrozen(false)
+		c.srv.Rand.Logic.Reset(logic)
+		c.srv.Rand.Other.Reset(other)
 	}()
 
 	c.drawClientFrame()
@@ -271,7 +230,8 @@ func (c *Client) renderInterpFrame() {
 	if legacy.Get_nox_client_gui_flag_1556112() == 0 {
 		c.GUI.Draw()
 	}
+	c.DrawSparks()
 	c.nox_client_drawCursorAndTooltips_477830()
 	c.r.DrawFade(true)
-	c.copyPixBuffer()
+	return true
 }

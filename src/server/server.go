@@ -270,9 +270,13 @@ func (s *Server) SetRateLimit(fps int) {
 	s.rateNext = platform.Ticks() + step
 }
 
+// RateRemaining reports the existing tick budget without starting a new timer.
+func (s *Server) RateRemaining() time.Duration {
+	return max(0, s.rateNext-platform.Ticks())
+}
+
 func (s *Server) RateWait() {
-	ticks := platform.Ticks()
-	dt := s.rateNext - ticks
+	dt := s.RateRemaining()
 	if dt > 0 {
 		s.LoopSleep(dt)
 	}

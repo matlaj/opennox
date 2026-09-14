@@ -682,9 +682,13 @@ func (c *Client) nox_client_drawCursorAndTooltips_477830() {
 	vp.Size = image.Pt(nox_win_width, nox_win_height)
 	c.pos1097204.X = 0
 	c.pos1097204.Y = c.r.FontHeight(nil) + 4
-	if c.dragndropItem != nil { // Dragging item
-		c.dragndropItem.SetPos(mpos)
-		legacy.CallDrawFunc(c.dragndropItem, vp)
+	if dr := c.dragndropItem; dr != nil { // Dragging item
+		saved := *dr
+		dr.SetPos(mpos)
+		legacy.CallDrawFunc(dr, vp)
+		if client.DrawRepaint {
+			*dr = saved
+		}
 	}
 	if c.dragndrapSpell != 0 { // Player is dragging spell or ability
 		pl := c.srv.Players.ByID(legacy.ClientPlayerNetCode())

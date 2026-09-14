@@ -3281,7 +3281,7 @@ nox_screenParticle* nox_client_newScreenParticle_431540(int a1, int a2, int a3, 
 	int v10; // edi
 	int v11; // ebx
 
-	if (!nox_alloc_screenParticles_806044) {
+	if (nox_draw_repaint || !nox_alloc_screenParticles_806044) {
 		return 0;
 	}
 	switch (a1) {

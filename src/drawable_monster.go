@@ -48,6 +48,11 @@ func parseMonsterDraw(obj *client.ObjectType, f *binfile.MemFile, _ string, _ []
 }
 
 func (c *Client) DrawMonster(vp *noxrender.Viewport, dr *client.Drawable) int {
+	if client.DrawRepaint {
+		// Summoned previews are not necessarily members of the world list.
+		saved := *dr
+		defer func() { *dr = saved }()
+	}
 	dd := (*client.MonsterDrawData)(dr.DrawData)
 	if !noxflags.HasGame(noxflags.GameFlag22) {
 		d := dr.UnionMonster()
@@ -138,6 +143,9 @@ func (c *Client) DrawMonster(vp *noxrender.Viewport, dr *client.Drawable) int {
 }
 
 func (c *Client) drawMonsterUpdate(dr *client.Drawable) {
+	if client.DrawRepaint {
+		return
+	}
 	if !dr.SubClass().AsMonster().Has(object.MonsterLookAround) {
 		return
 	}

@@ -1,6 +1,9 @@
 #ifndef NOX_DEFS_H
 #define NOX_DEFS_H
 
+// Set by the client loop while repainting between ticks.
+extern int nox_draw_repaint;
+
 #include "memfile.h"
 #include <ctype.h>
 #include <stdbool.h>

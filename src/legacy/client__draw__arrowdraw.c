@@ -19,7 +19,7 @@ int nox_thing_arrow_draw(int* a1, nox_drawable* dr) {
 		*getMemU32Ptr(0x5D4594, 1313720) = v2;
 	}
 	v3 = a2[81];
-	if ((a2[3] - v3) * (a2[3] - v3) + (a2[4] - a2[82]) * (a2[4] - a2[82]) > 200) {
+	if (!nox_draw_repaint && ((a2[3] - v3) * (a2[3] - v3) + (a2[4] - a2[82]) * (a2[4] - a2[82]) > 200)) {
 		v4 = (uint32_t*)nox_xxx_spriteLoadAdd_45A360_drawable(v2, v3, a2[82]);
 		v4[108] = a2[3];
 		v4[109] = a2[4];
@@ -47,7 +47,7 @@ int nox_thing_weak_arrow_draw(int* a1, nox_drawable* dr) {
 		*getMemU32Ptr(0x5D4594, 1313724) = v2;
 	}
 	v3 = a2[81];
-	if ((a2[3] - v3) * (a2[3] - v3) + (a2[4] - a2[82]) * (a2[4] - a2[82]) > 200) {
+	if (!nox_draw_repaint && ((a2[3] - v3) * (a2[3] - v3) + (a2[4] - a2[82]) * (a2[4] - a2[82]) > 200)) {
 		v4 = (uint32_t*)nox_xxx_spriteLoadAdd_45A360_drawable(v2, v3, a2[82]);
 		v4[108] = a2[3];
 		v4[109] = a2[4];

@@ -12,6 +12,10 @@ int nox_thing_boulder_draw(int* a1, nox_drawable* dr) {
 	int a2 = dr;
 
 	v2 = *(uint32_t*)(a2 + 304);
+	if (nox_draw_repaint) {
+		nox_xxx_drawObject_4C4770_draw(a1, dr, *(uint32_t*)(*(uint32_t*)(v2 + 4) + 4 * (*(uint32_t*)(a2 + 440) + *(uint32_t*)(a2 + 444))));
+		return 1;
+	}
 	if (!*(uint32_t*)(a2 + 432) && !*(uint32_t*)(a2 + 436)) {
 		*(uint32_t*)(a2 + 432) = *(uint32_t*)(a2 + 12);
 		*(uint32_t*)(a2 + 436) = *(uint32_t*)(a2 + 16);

@@ -81,7 +81,8 @@ int sub_4BA230(int a1, int a2, int a3, int a4, int a5) {
 		*getMemU32Ptr(0x5D4594, 1316404) = 1;
 	}
 	sub_4BA670(a1, a2, a3, a4, a5);
-	for (i = 0; i < 3; ++i) {
+	result = dword_5d4594_1316408;
+	for (i = 0; !nox_draw_repaint && i < 3; ++i) {
 		result = dword_5d4594_1316408;
 		v10 = 0;
 		if (*(int*)&dword_5d4594_1316408 + 1 <= 0) {
@@ -216,7 +217,7 @@ char sub_4BA8B0(int* a1, int* a2, int* a3) {
 	*getMemU32Ptr(0x5D4594, 1313916 + v6) = a2[1];
 	LOBYTE(v6) = (unsigned char)gameFrame();
 	dword_5d4594_1316412 = v5;
-	if ((unsigned char)gameFrame() & 4) {
+	if (!nox_draw_repaint && ((unsigned char)gameFrame() & 4)) {
 		v6 = nox_common_randomIntMinMax_415FF0(0, 10, "C:\\NoxPost\\src\\client\\Draw\\Plasma.c", 135);
 		if (v6 > 5) {
 			LOBYTE(v6) = nox_xxx_drawEnergyBolt_499710(*a2 + *((uint32_t*)v4 + 4) - *(uint32_t*)v4,

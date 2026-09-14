@@ -317,16 +317,16 @@ int nox_xxx_guiHealthManaTubeDraw_471D10(int xLeft) {
 						} else {
 							sub_4720C0(xLeft + *(v7 - 2), yTop + v8);
 						}
-						*(v7 - 1) -= v7[1];
+						if (!nox_draw_repaint) *(v7 - 1) -= v7[1];
 					} else {
-						v7[2] = 0;
+						if (!nox_draw_repaint) v7[2] = 0;
 					}
 					v2 = v18;
 				}
 				v7 += 6;
 				--v19;
 			} while (v19);
-			if (v6 > 1) {
+			if (!nox_draw_repaint && v6 > 1) {
 				v9 = v21;
 				v10 = 64;
 				do {
@@ -364,7 +364,7 @@ int nox_xxx_guiHealthManaTubeDraw_471D10(int xLeft) {
 				v2 = v18;
 			}
 		}
-		if (!v2) {
+		if (!nox_draw_repaint && !v2) {
 			if (*(int*)&dword_5d4594_1096260 <= 0) {
 				v16 = dword_5d4594_1096256 >> 3;
 			} else {
@@ -379,7 +379,7 @@ int nox_xxx_guiHealthManaTubeDraw_471D10(int xLeft) {
 			}
 			nox_xxx_wndSetIcon_46AE60(*(int*)&dword_5d4594_1090276, *getMemU32Ptr(0x5D4594, 1092996 + 4 * v16));
 		}
-		sub_472080();
+		if (!nox_draw_repaint) sub_472080();
 		result = 1;
 	} else {
 		nox_client_drawRectFilledAlpha_49CF10(xLeft, yTop, 15, 125);

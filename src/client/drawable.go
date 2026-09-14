@@ -66,6 +66,9 @@ func (c *Client) DrawableLinkThing(dr *Drawable, typeID int) int {
 }
 
 func (c *Client) Nox_xxx_updateSpritePosition_49AA90(dr *Drawable, x, y int) {
+	if DrawRepaint {
+		return
+	}
 	dr.Field_8 = uint32(dr.PosVec.X)
 	dr.Field_9 = uint32(dr.PosVec.Y)
 	if x < 0 || x >= 5888 || y < 0 || y >= 5888 {
@@ -188,6 +191,9 @@ func (c *clientDrawables) FirstPlayerList() *Drawable {
 }
 
 func (c *clientDrawables) List34Add(dr *Drawable) {
+	if DrawRepaint {
+		return
+	}
 	dr.Field_98 = nil
 	dr.Field_97 = c.list3
 	if c.list3 != nil {
@@ -284,6 +290,9 @@ func (c *clientDrawables) List8Add(dr *Drawable) {
 }
 
 func (c *clientDrawables) RemoveHealthBar(dr *Drawable, a2 uint8) {
+	if DrawRepaint {
+		return
+	}
 	if dr.Flags()&0x80000000 == 0 {
 		return
 	}
@@ -304,6 +313,9 @@ func (c *clientDrawables) RemoveHealthBar(dr *Drawable, a2 uint8) {
 }
 
 func (c *clientDrawables) MinimapAdd(dr *Drawable, a2 uint8) {
+	if DrawRepaint {
+		return
+	}
 	if dr == nil {
 		return
 	}
@@ -343,6 +355,9 @@ func (c *clientDrawables) DeadlineRemove(dr *Drawable) {
 }
 
 func (c *clientDrawables) TransparentDecay(dr *Drawable, lifetime int) {
+	if DrawRepaint {
+		return
+	}
 	if dr.Deadline != 0 {
 		c.DeadlineRemove(dr)
 	}

@@ -601,7 +601,7 @@ func (c *Client) drawCreatureBackEffects(vp *noxrender.Viewport, dr *client.Draw
 		pos := vp.ToScreenPos(dr.Pos())
 		c.r.DrawGlow(pos, nox_color_blue_2650684, 30, 31)
 	}
-	if dr.HasEnchant(server.ENCHANT_HASTED) && !nox_xxx_checkGameFlagPause_413A50() {
+	if !client.DrawRepaint && dr.HasEnchant(server.ENCHANT_HASTED) && !nox_xxx_checkGameFlagPause_413A50() {
 		if drawWhiteBubbleParticle == 0 {
 			drawWhiteBubbleParticle = c.Things.IndByID("WhiteBubbleParticle")
 			drawLightBlueBubbleParticle = c.Things.IndByID("LightBlueBubbleParticle")
@@ -631,7 +631,7 @@ func (c *Client) drawCreatureBackEffects(vp *noxrender.Viewport, dr *client.Draw
 			legacy.Sub_499F60(drawLightBlueBubbleParticle, pos.Add(pos3), 1, v15, v19, 0, 0, 0, v23)
 		}
 	}
-	if dr.HasEnchant(server.ENCHANT_RUN) && !nox_xxx_checkGameFlagPause_413A50() {
+	if !client.DrawRepaint && dr.HasEnchant(server.ENCHANT_RUN) && !nox_xxx_checkGameFlagPause_413A50() {
 		if drawRedBubbleParticle == 0 {
 			drawRedBubbleParticle = c.Things.IndByID("RedBubbleParticle")
 			drawOrangeBubbleParticle = c.Things.IndByID("OrangeBubbleParticle")
@@ -683,7 +683,7 @@ func (c *Client) drawCreatureFrontEffects(vp *noxrender.Viewport, dr *client.Dra
 	if dr.HasEnchant(server.ENCHANT_INVISIBLE) && legacy.Sub_474B40(dr) == 0 {
 		return
 	}
-	if dr.HasEnchant(server.ENCHANT_SHOCK) {
+	if !client.DrawRepaint && dr.HasEnchant(server.ENCHANT_SHOCK) {
 		if drawWhiteSpark == 0 {
 			drawWhiteSpark = c.Things.IndByID("WhiteSpark")
 		}
@@ -706,7 +706,7 @@ func (c *Client) drawCreatureFrontEffects(vp *noxrender.Viewport, dr *client.Dra
 		c.Nox_video_drawAnimatedImageOrCursorAt(legacy.AsImageRefP(*memmap.PtrPtr(0x5D4594, 1096456)), pos.Add(image.Point{X: -64, Y: -64}))
 		c.r.Data().SetColorize17(0)
 	}
-	if dr.HasEnchant(server.ENCHANT_SLOWED) && !nox_xxx_checkGameFlagPause_413A50() {
+	if !client.DrawRepaint && dr.HasEnchant(server.ENCHANT_SLOWED) && !nox_xxx_checkGameFlagPause_413A50() {
 		v11 := int(dr.Shape.Circle.R)
 		v44 := int(dr.GetZSizeMax() * 0.5)
 		if drawYellowBubbleParticle == 0 {
@@ -725,7 +725,7 @@ func (c *Client) drawCreatureFrontEffects(vp *noxrender.Viewport, dr *client.Dra
 			legacy.Sub_499F60(drawYellowBubbleParticle, pos.Add(pos2), v32, v34, v36, -5, 0, 0, v40)
 		}
 	}
-	if dr.HasEnchant(server.ENCHANT_INFRAVISION) && !nox_xxx_checkGameFlagPause_413A50() {
+	if !client.DrawRepaint && dr.HasEnchant(server.ENCHANT_INFRAVISION) && !nox_xxx_checkGameFlagPause_413A50() {
 		if drawGreenBubbleParticle == 0 {
 			drawGreenBubbleParticle = c.Things.IndByID("GreenBubbleParticle")
 		}

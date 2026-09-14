@@ -155,6 +155,11 @@ func (c *Client) mainloopDrawAndPresent() {
 		c.nox_client_drawCursorAndTooltips_477830() // Draw cursor
 	}
 	c.r.DrawFade(true)
+	// Run legacy tick callbacks at authoritative positions before repainting
+	// the displayed frame. Repaints never run particle or gameplay updates.
+	if interpEnabled() {
+		c.drawInterpFrame()
+	}
 	c.maybeScreenshot()
 	if !noxflags.HasEngine(noxflags.EngineNoRendering) || noxflags.HasEngine(noxflags.EngineFlag9) || nox_client_gui_flag_815132 != 0 {
 		c.copyPixBuffer()
