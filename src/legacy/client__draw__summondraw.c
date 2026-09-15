@@ -46,7 +46,9 @@ int nox_thing_summon_effect_draw(int* a1, nox_drawable* dr) {
 	v8 = *((unsigned short*)v2 + 218);
 	if (v7 < (unsigned int)(unsigned short)v8) {
 		if (!nox_draw_repaint && v7 >= v8 - 1) {
-			nox_xxx_makePointFxCli_499610(v6, 50, 1000, 30, v2[3], v2[4]);
+			int2 pos;
+			nox_drawable_authoritative_pos(dr, &pos);
+			nox_xxx_makePointFxCli_499610(v6, 50, 1000, 30, pos.field_0, pos.field_4);
 		}
 		nox_thing_animate_draw(a1, dr);
 		v10 = 0;

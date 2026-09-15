@@ -10,6 +10,8 @@ int nox_thing_boulder_draw(int* a1, nox_drawable* dr) {
 	int v6;          // ecx
 
 	int a2 = dr;
+	int2 pos;
+	nox_drawable_authoritative_pos(dr, &pos);
 
 	v2 = *(uint32_t*)(a2 + 304);
 	if (nox_draw_repaint) {
@@ -17,11 +19,11 @@ int nox_thing_boulder_draw(int* a1, nox_drawable* dr) {
 		return 1;
 	}
 	if (!*(uint32_t*)(a2 + 432) && !*(uint32_t*)(a2 + 436)) {
-		*(uint32_t*)(a2 + 432) = *(uint32_t*)(a2 + 12);
-		*(uint32_t*)(a2 + 436) = *(uint32_t*)(a2 + 16);
+		*(uint32_t*)(a2 + 432) = pos.field_0;
+		*(uint32_t*)(a2 + 436) = pos.field_4;
 	}
-	v3 = *(uint32_t*)(a2 + 12) - *(uint32_t*)(a2 + 432);
-	v4 = *(uint32_t*)(a2 + 16) - *(uint32_t*)(a2 + 436);
+	v3 = pos.field_0 - *(uint32_t*)(a2 + 432);
+	v4 = pos.field_4 - *(uint32_t*)(a2 + 436);
 	if (v3 * v3 + v4 * v4 < 100) {
 		nox_xxx_drawObject_4C4770_draw(a1, dr, *(uint32_t*)(*(uint32_t*)(v2 + 4) + 4 * (*(uint32_t*)(a2 + 440) + *(uint32_t*)(a2 + 444))));
 		return 1;
@@ -56,8 +58,8 @@ int nox_thing_boulder_draw(int* a1, nox_drawable* dr) {
 		*(uint32_t*)(a2 + 440) = 15;
 	}
 LABEL_17:
-	*(uint32_t*)(a2 + 432) = *(uint32_t*)(a2 + 12);
-	*(uint32_t*)(a2 + 436) = *(uint32_t*)(a2 + 16);
+	*(uint32_t*)(a2 + 432) = pos.field_0;
+	*(uint32_t*)(a2 + 436) = pos.field_4;
 	nox_xxx_drawObject_4C4770_draw(a1, dr, *(uint32_t*)(*(uint32_t*)(v2 + 4) + 4 * (*(uint32_t*)(a2 + 440) + *(uint32_t*)(a2 + 444))));
 	return 1;
 }

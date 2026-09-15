@@ -36,41 +36,58 @@ func TestInterpPreservesTickPositions(t *testing.T) {
 	track.Observe(1, image.Pt(100, 100))
 	track.Observe(2, dr.Pos())
 	interpObjects[dr] = track
-	t.Cleanup(func() { delete(interpObjects, dr) })
+	t.Cleanup(func() {
+		delete(interpObjects, dr)
+		dr.RestoreDrawPosition()
+		interpSaved = interpSaved[:0]
+	})
 	vp := &noxrender.Viewport{Size: image.Pt(640, 480), Jiggle12: 3}
 	interpCam.Observe(1, image.Pt(100, 100))
 	interpCam.Observe(2, image.Pt(120, 110))
-	for _, alpha := range []float64{0, 0.25, 0.5, 1} {
-		legacy.SetDrawRepaint(false)
-		restore := c.interpApplyAt(vp, alpha)
-		if dr.Pos() != image.Pt(120, 110) {
-			t.Fatal("tick callbacks received interpolated positions")
+	for _, repaint := range []bool{false, true} {
+		for _, alpha := range []float64{0, 0.25, 0.5, 1} {
+			legacy.SetDrawRepaint(repaint)
+			saved, savedVP := *dr, *vp
+			restore := c.interpApplyAt(vp, alpha)
+			if dr.Pos() != interpLerp(image.Pt(100, 100), saved.Pos(), alpha) {
+				t.Fatal("frame did not interpolate")
+			}
+			if dr.AuthoritativePos() != saved.Pos() {
+				t.Fatal("tick effect received interpolated coordinates")
+			}
+			if repaint {
+				pos := dr.Pos()
+				c.Nox_xxx_updateSpritePosition_49AA90(dr, 900, 900)
+				if dr.Pos() != pos {
+					t.Fatal("repaint moved a sprite")
+				}
+			}
+			dr.Field_121 = 42 // visibility cache
+			vp.Jiggle12 = 99
+			restore()
+			restore() // deferred and explicit restoration are safe together
+			if !repaint {
+				saved.Field_121 = 42
+				savedVP.Jiggle12 = 99
+			}
+			if *dr != saved || *vp != savedVP {
+				t.Fatal("restoration lost tick state or kept repaint state")
+			}
+			p := &particleFx{flags: 4, drawable8: dr, ticksLeft: 10}
+			if !partfxUpdateDef(p) || p.x16 != 20<<16 || p.y16 != 10<<16 {
+				t.Fatal("attached particle did not receive full owner displacement")
+			}
 		}
-		restore()
-		saved, savedVP := *dr, *vp
-		legacy.SetDrawRepaint(true)
-		restore = c.interpApplyAt(vp, alpha)
-		if dr.Pos() != interpLerp(image.Pt(100, 100), saved.Pos(), alpha) {
-			t.Fatal("repaint did not interpolate")
-		}
-		// Legacy movement must not touch the spatial index during a repaint.
-		pos := dr.Pos()
-		c.Nox_xxx_updateSpritePosition_49AA90(dr, 900, 900)
-		if dr.Pos() != pos {
-			t.Fatal("repaint moved an object in the spatial index")
-		}
-		dr.Field_121 = 42 // A legacy visibility cache write.
-		vp.Jiggle12 = 99
-		restore()
-		restore() // Deferred restoration is safe after an explicit restore.
-		legacy.SetDrawRepaint(false)
-		if *dr != saved || *vp != savedVP {
-			t.Fatal("repaint changed persistent drawable state")
-		}
-		p := &particleFx{flags: 4, drawable8: dr, ticksLeft: 10}
-		if !partfxUpdateDef(p) || p.x16 != 20<<16 || p.y16 != 10<<16 {
-			t.Fatal("attached particle did not receive full owner displacement")
-		}
+	}
+	legacy.SetDrawRepaint(false)
+	restore := c.interpApplyAt(vp, 0.5)
+	// A real position update (or deletion) during drawing must end the temporary
+	// displacement, so the outer restore cannot resurrect the old position.
+	dr.RestoreDrawPosition()
+	dr.SetPos(image.Pt(130, 115))
+	restore()
+	if dr.Pos() != image.Pt(130, 115) {
+		t.Fatal("tick movement was undone")
 	}
 }
 

@@ -204,6 +204,7 @@ func (c *Client) Nox_xxx_spriteDeleteStatic_45A4E0_drawable(dr *client.Drawable)
 	if client.DrawRepaint {
 		return
 	}
+	dr.RestoreDrawPosition()
 	//c.Objs.Ext.Delete(dr)
 	if dr.Field_93 != nil {
 		dr.Field_93.NextPtr = dr.NextPtr

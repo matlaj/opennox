@@ -606,9 +606,9 @@ func (c *Client) drawCreatureBackEffects(vp *noxrender.Viewport, dr *client.Draw
 			drawWhiteBubbleParticle = c.Things.IndByID("WhiteBubbleParticle")
 			drawLightBlueBubbleParticle = c.Things.IndByID("LightBlueBubbleParticle")
 		}
-		pos := dr.Pos()
+		pos := dr.AuthoritativePos()
 		v2 := 0
-		if dr.Pos() != dr.Point8() {
+		if pos != dr.Point8() {
 			v2 = 2
 		}
 		for ; v2 > 0; v2-- {
@@ -636,9 +636,9 @@ func (c *Client) drawCreatureBackEffects(vp *noxrender.Viewport, dr *client.Draw
 			drawRedBubbleParticle = c.Things.IndByID("RedBubbleParticle")
 			drawOrangeBubbleParticle = c.Things.IndByID("OrangeBubbleParticle")
 		}
-		pos := dr.Pos()
+		pos := dr.AuthoritativePos()
 		v5 := 1
-		if dr.Pos() != dr.Point8() {
+		if pos != dr.Point8() {
 			v5 = 2
 		}
 		for ; v5 > 0; v5-- {
@@ -687,7 +687,7 @@ func (c *Client) drawCreatureFrontEffects(vp *noxrender.Viewport, dr *client.Dra
 		if drawWhiteSpark == 0 {
 			drawWhiteSpark = c.Things.IndByID("WhiteSpark")
 		}
-		pos := dr.Pos()
+		pos := dr.AuthoritativePos()
 		legacy.Nox_xxx_drawEnergyBolt_499710(pos.X, pos.Y, dr.Z(), drawWhiteSpark)
 	}
 	if dr.HasEnchant(server.ENCHANT_CONFUSED) || dr.HasEnchant(server.ENCHANT_HELD) || dr.HasEnchant(server.ENCHANT_ANTI_MAGIC) || dr.HasEnchant(server.ENCHANT_CHARMING) {
@@ -712,7 +712,7 @@ func (c *Client) drawCreatureFrontEffects(vp *noxrender.Viewport, dr *client.Dra
 		if drawYellowBubbleParticle == 0 {
 			drawYellowBubbleParticle = c.Things.IndByID("YellowBubbleParticle")
 		}
-		pos := dr.Pos()
+		pos := dr.AuthoritativePos()
 		for v12 := 0; v12 < 2; v12++ {
 			v40 := c.srv.Rand.Other.Int(3, 5)
 			v36 := c.srv.Rand.Other.Int(3, 6)
@@ -729,7 +729,7 @@ func (c *Client) drawCreatureFrontEffects(vp *noxrender.Viewport, dr *client.Dra
 		if drawGreenBubbleParticle == 0 {
 			drawGreenBubbleParticle = c.Things.IndByID("GreenBubbleParticle")
 		}
-		pos := dr.Pos()
+		pos := dr.AuthoritativePos()
 		v41 := c.srv.Rand.Other.Int(2, 3)
 		v37 := c.srv.Rand.Other.Int(3, 6)
 		v35 := c.srv.Rand.Other.Int(2, 4)

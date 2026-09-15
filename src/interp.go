@@ -32,12 +32,10 @@ import (
 // positions. Positions stay integers, so the legacy C draw code and its fixed struct
 // layouts are untouched; they simply receive a different integer each frame.
 //
-// Ordinary tick draws run callbacks at authoritative positions, then repaint at
-// interpolated positions before presenting. This costs an additional draw per tick
-// while enabled, but keeps effect updates independent of the presentation clock.
-// Repaint callbacks must use DrawRepaint (nox_draw_repaint in C) to skip persistent
-// updates. Drawable snapshots protect render caches; they do not undo changes to
-// external lists, allocations, or effect histories.
+// Tick frames and extra frames each draw the world once. Tick callbacks use
+// authoritative positions for effects and history, and extra frames skip updates.
+// Repaint snapshots protect render caches; they do not undo changes to external
+// lists, allocations, or effect histories.
 //
 // Note that interpolating rather than extrapolating means the picture trails the
 // simulation by one tick (~33ms). That is the standard trade and it is why this is
@@ -90,7 +88,11 @@ func interpReset() {
 	interpTimeline = frameinterp.Timeline{}
 	interpCam = frameinterp.Track{}
 	clear(interpObjects)
+	for dr := range client.DrawPositions {
+		dr.RestoreDrawPosition()
+	}
 	interpSchedule.Reset()
+	interpRemoteDeadline = 0
 	interpSkipFrame = false
 }
 
@@ -111,7 +113,10 @@ func interpTrackDrawable(dr *client.Drawable) {
 	interpObjects[dr] = t
 }
 
-func interpForgetDrawable(dr *client.Drawable) { delete(interpObjects, dr) }
+func interpForgetDrawable(dr *client.Drawable) {
+	dr.RestoreDrawPosition()
+	delete(interpObjects, dr)
+}
 
 func interpTrackCamera(pos image.Point) {
 	interpCam.Observe(noxServer.Frame(), pos)
@@ -153,7 +158,7 @@ func (c *Client) interpApply(vp *noxrender.Viewport) func() {
 }
 
 func (c *Client) interpApplyAt(vp *noxrender.Viewport, alpha float64) func() {
-	if !interpEnabled() || !client.DrawRepaint {
+	if !interpEnabled() || interpFrameInterval() == 0 {
 		return func() {}
 	}
 
@@ -167,8 +172,11 @@ func (c *Client) interpApplyAt(vp *noxrender.Viewport, alpha float64) func() {
 	for dr := c.Objs.FirstList1(); dr != nil; dr = dr.NextPtr {
 		// Legacy drawing fills visibility/light caches in the drawable. Keep
 		// those writes local to this repaint as well as the displaced position.
-		interpSaved = append(interpSaved, interpSavedDrawable{dr: dr, state: *dr})
+		if client.DrawRepaint {
+			interpSaved = append(interpSaved, interpSavedDrawable{dr: dr, state: *dr})
+		}
 		if pos, ok := interpObjects[dr].At(frame, alpha, client.Nox_drawable_2d_div); ok {
+			client.DrawPositions[dr] = dr.Pos()
 			dr.SetPos(pos)
 		}
 	}
@@ -183,7 +191,15 @@ func (c *Client) interpApplyAt(vp *noxrender.Viewport, alpha float64) func() {
 			*it.dr = it.state
 		}
 		interpSaved = interpSaved[:0]
-		*vp = savedViewport
+		for dr := range client.DrawPositions {
+			dr.RestoreDrawPosition()
+		}
+		if client.DrawRepaint {
+			*vp = savedViewport
+		} else {
+			// Keep tick updates such as camera shake, restoring only its origin.
+			vp.World = savedViewport.World
+		}
 	}
 }
 
@@ -191,6 +207,37 @@ var interpSchedule frameinterp.Scheduler
 
 // Keep one-shot clears visible until the next ordinary world draw.
 var interpSkipFrame bool
+
+// Ordinary frames share the repaint cadence and refresh its cost estimate even
+// when a previous slow frame prevented any extra draws.
+var interpDrawStart time.Duration
+
+func (c *Client) interpStartFrame() {
+	if interpEnabled() {
+		interpSchedule.SetVSync(viper.GetBool(configVideoVSync))
+		interpSchedule.WaitFrame(interpFrameInterval(), platform.Ticks, c.srv.LoopSleep)
+	}
+	interpDrawStart = platform.Ticks()
+}
+
+// A joined client's old relative limiter would add every VSync overrun to the
+// next tick. Keep its 30 Hz polling deadline across loop iterations instead.
+var interpRemoteDeadline time.Duration
+
+func (c *Client) interpBeginLoop() {
+	if !useFrameLimit || !interpEnabled() || !noxflags.HasGame(noxflags.GameClient) || noxflags.HasGame(noxflags.GameHost) {
+		interpRemoteDeadline = 0
+		return
+	}
+	interpRemoteDeadline = frameinterp.NextTick(interpRemoteDeadline, platform.Ticks(), time.Second/30)
+}
+
+func (c *Client) interpRateRemaining() time.Duration {
+	if interpRemoteDeadline == 0 {
+		return c.srv.RateRemaining()
+	}
+	return max(0, interpRemoteDeadline-platform.Ticks())
+}
 
 func (c *Client) renderInterpUntil(budget time.Duration) {
 	interpSchedule.Run(platform.Ticks()+budget, interpFrameInterval(), platform.Ticks,

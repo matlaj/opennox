@@ -24,3 +24,6 @@ func interpReset()                             {}
 func interpBeginTick()                         {}
 func interpTrackDrawable(dr *client.Drawable)  {}
 func interpForgetDrawable(dr *client.Drawable) {}
+
+func (c *Client) interpBeginLoop()                   {}
+func (c *Client) interpRateRemaining() time.Duration { return c.srv.RateRemaining() }

@@ -164,7 +164,9 @@ int nox_thing_blue_rain_spark_draw(uint32_t* a1, nox_drawable* dr) {
 			v3 = nox_xxx_getTTByNameSpriteMB_44CFC0("WhiteSpark");
 			*getMemU32Ptr(0x5D4594, 1313688) = v3;
 		}
-		v4 = nox_xxx_spriteLoadAdd_45A360_drawable(v3, *(uint32_t*)(a2 + 12), *(uint32_t*)(a2 + 16));
+		int2 pos;
+		nox_drawable_authoritative_pos(dr, &pos);
+		v4 = nox_xxx_spriteLoadAdd_45A360_drawable(v3, pos.field_0, pos.field_4);
 		v5 = v4;
 		if (v4) {
 			if (v4 != -432) {
@@ -257,11 +259,13 @@ int nox_thing_rain_orb_draw(uint32_t* a1, nox_drawable* dr) {
 			*getMemU32Ptr(0x5D4594, 1313700) = nox_xxx_getTTByNameSpriteMB_44CFC0("WhiteMoveOrb");
 			*getMemU32Ptr(0x5D4594, 1313704) = nox_xxx_getTTByNameSpriteMB_44CFC0("BlueMoveOrb");
 		}
-		v4 = *(uint32_t*)(a2 + 12);
-		v5 = *(uint32_t*)(a2 + 16);
+		int2 pos;
+		nox_drawable_authoritative_pos(dr, &pos);
+		v4 = pos.field_0;
+		v5 = pos.field_4;
 		v6 = v5 + 20;
 		v25 = v5 - *(uint32_t*)(a2 + 436);
-		v24.field_0 = (double)(v2[3] - v2[108]);
+		v24.field_0 = (double)(v4 - v2[108]);
 		v24.field_4 = (double)v25;
 		v7 = nox_xxx_math_509ED0(&v24);
 		v23[2] = v4;

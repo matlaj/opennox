@@ -6,7 +6,6 @@
 //----- (004B7740) --------------------------------------------------------
 uint32_t* nox_thing_falling_sparks_draw_4B7740(int a1, int a2, nox_drawable* dr) {
 	if (nox_draw_repaint) return 0;
-	int a3 = dr;
 	int2* v3;         // edi
 	int v4;           // ebp
 	int v5;           // eax
@@ -15,12 +14,14 @@ uint32_t* nox_thing_falling_sparks_draw_4B7740(int a1, int a2, nox_drawable* dr)
 	uint32_t* result; // eax
 	int2 a2a;         // [esp+10h] [ebp-8h]
 
-	v3 = (int2*)(a3 + 12);
+	int2 pos;
+	nox_drawable_authoritative_pos(dr, &pos);
+	v3 = &pos;
 	v4 = 2;
 	do {
 		a2a.field_0 =
 			v3->field_0 + nox_common_randomIntMinMax_415FF0(-15, 15, "C:\\NoxPost\\src\\client\\Draw\\LvUpDraw.c", 35);
-		v5 = *(uint32_t*)(a3 + 16) +
+		v5 = pos.field_4 +
 			 nox_common_randomIntMinMax_415FF0(-15, 15, "C:\\NoxPost\\src\\client\\Draw\\LvUpDraw.c", 36);
 		a2a.field_4 = v5;
 		v6 = v5 - *(uint32_t*)(a2 + 20);

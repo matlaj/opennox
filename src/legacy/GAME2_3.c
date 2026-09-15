@@ -2289,11 +2289,13 @@ int sub_495BF0(int a1, int a2, int a3) {
 	int v14;           // [esp+14h] [ebp-8h]
 	int v15;           // [esp+18h] [ebp-4h]
 
+	int2 pos;
+	nox_drawable_authoritative_pos((nox_drawable*)a1, &pos);
 	v3 = 0;
 	result = *(unsigned char*)(a2 + 56);
 	v13 = -1;
 	if (result <= 0) {
-		if (*(uint32_t*)(a1 + 12) == *(uint32_t*)(a1 + 32) && *(uint32_t*)(a1 + 16) == *(uint32_t*)(a1 + 36)) {
+		if (pos.field_0 == *(uint32_t*)(a1 + 32) && pos.field_4 == *(uint32_t*)(a1 + 36)) {
 			if (!nox_draw_repaint) *(uint8_t*)(a2 + 56) = 0;
 			return result;
 		}
@@ -2306,7 +2308,7 @@ int sub_495BF0(int a1, int a2, int a3) {
 			++v3;
 			v5 += 2;
 			if (v3 >= result) {
-				if (*(uint32_t*)(a1 + 12) == *(uint32_t*)(a1 + 32) && *(uint32_t*)(a1 + 16) == *(uint32_t*)(a1 + 36)) {
+				if (pos.field_0 == *(uint32_t*)(a1 + 32) && pos.field_4 == *(uint32_t*)(a1 + 36)) {
 					if (!nox_draw_repaint) *(uint8_t*)(a2 + 56) = 0;
 					return result;
 				}
@@ -2353,8 +2355,8 @@ int sub_495BF0(int a1, int a2, int a3) {
 	*(uint32_t*)(a1 + 12) = v6;
 	*(uint32_t*)(a1 + 16) = v7;
 	v12 = *(uint8_t*)(a2 + 56);
-	*(uint32_t*)(a2 + 8) = v6;
-	*(uint32_t*)(a2 + 12) = v7;
+	*(uint32_t*)(a2 + 8) = pos.field_0;
+	*(uint32_t*)(a2 + 12) = pos.field_4;
 	if (v12 != 5) {
 		*(uint8_t*)(a2 + 56) = v12 + 1;
 	}
@@ -2395,14 +2397,16 @@ int sub_495D00(uint32_t* a1, int a2, uint32_t* a3) {
 	int v31;           // [esp+28h] [ebp-4h]
 	uint32_t* v32;     // [esp+38h] [ebp+Ch]
 
+	int2 pos;
+	nox_drawable_authoritative_pos((nox_drawable*)a1, &pos);
 	v3 = 0;
 	v4 = *(unsigned char*)(a2 + 56);
 	v26 = -1;
 	if (v4 <= 0) {
 		v6 = a1;
-		if (a1[3] == a1[8]) {
+		if (pos.field_0 == a1[8]) {
 			result = a1[9];
-			if (a1[4] == result) {
+			if (pos.field_4 == result) {
 				if (!nox_draw_repaint) *(uint8_t*)(a2 + 56) = 0;
 				return result;
 			}
@@ -2418,9 +2422,9 @@ int sub_495D00(uint32_t* a1, int a2, uint32_t* a3) {
 			v5 += 2;
 			if (v3 >= v4) {
 				v6 = a1;
-				if (a1[3] == a1[8]) {
+				if (pos.field_0 == a1[8]) {
 					result = a1[9];
-					if (a1[4] == result) {
+					if (pos.field_4 == result) {
 						if (!nox_draw_repaint) *(uint8_t*)(a2 + 56) = 0;
 						return result;
 					}
@@ -2481,8 +2485,8 @@ int sub_495D00(uint32_t* a1, int a2, uint32_t* a3) {
 			--v19;
 		} while (v19);
 	}
-	*(uint32_t*)(v12 + 8) = v6[3];
-	*(uint32_t*)(v12 + 12) = v6[4];
+	*(uint32_t*)(v12 + 8) = pos.field_0;
+	*(uint32_t*)(v12 + 12) = pos.field_4;
 	v21 = *(uint8_t*)(v12 + 56);
 	if (v21 != 5) {
 		*(uint8_t*)(v12 + 56) = v21 + 1;

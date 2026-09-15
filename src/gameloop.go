@@ -98,7 +98,7 @@ func (c *Client) mainloopFrameLimit() {
 		return
 	}
 	if interpEnabled() && noxflags.HasGame(noxflags.GameClient) && !noxflags.HasGame(noxflags.GameHost) {
-		if dt := noxServer.RateRemaining(); dt > 0 {
+		if dt := c.interpRateRemaining(); dt > 0 {
 			c.renderInterpUntil(dt)
 		}
 	} else {
@@ -160,6 +160,7 @@ mainloop:
 			}
 		}
 		c.Server.SetRateLimit(30)
+		c.interpBeginLoop()
 		c.processInput()
 		c.nox_game_cdMaybeSwitchState_413800()
 

@@ -146,6 +146,7 @@ func (c *Client) nox_xxx_client_435F80_draw() bool {
 }
 
 func (c *Client) nox_xxx_clientDrawAll_436100_draw() {
+	c.interpStartFrame()
 	c.Debug.DrawCnt++
 	v0 := platformTicks()
 	isTick := false
@@ -192,17 +193,23 @@ func (c *Client) drawClientFrame() {
 			}
 		}
 	}
+	drewWorld := false
 	restoreInterp := c.interpApply(vp)
 	defer restoreInterp()
 	if noxflags.HasEngine(noxflags.EngineNoRendering) {
 		legacy.Nox_xxx_clientDrawAll_436100_draw_A()
 	} else if c.ClientPlayerUnit() != nil && nox_client_isConnected() {
-		c.nox_xxx_drawAllMB_475810_draw(vp)
+		drewWorld = c.nox_xxx_drawAllMB_475810_draw(vp)
 		legacy.Nox_xxx_drawMinimapAndLines_4738E0()
 	} else {
 		c.r.ClearScreen(color.Black)
 	}
 	restoreInterp()
+	// Owner displacement and positional audio need the full tick coordinates.
+	if drewWorld && !client.DrawRepaint {
+		c.r.partfx.Update()
+		c.sub_45AB40()
+	}
 	c.DrawPerfmon(noxPerfmon)
 	if legacy.Get_dword_5d4594_811904() != 0 {
 		legacy.Sub_436F50()
@@ -259,7 +266,7 @@ func (c *Client) sub_468F80(vp *noxrender.Viewport) {
 	}
 }
 
-func (c *Client) nox_xxx_drawAllMB_475810_draw(vp *noxrender.Viewport) {
+func (c *Client) nox_xxx_drawAllMB_475810_draw(vp *noxrender.Viewport) bool {
 	r := c.r
 	c.nox_xxx_drawAllMB_475810_draw_A(vp)
 	if !client.DrawRepaint {
@@ -283,14 +290,14 @@ func (c *Client) nox_xxx_drawAllMB_475810_draw(vp *noxrender.Viewport) {
 		r.ClearScreen(color.Black)
 		r.SetRectFullScreen()
 		c.GUI.ValYYY = 1
-		return
+		return false
 	}
 	if memmap.Uint32(0x5D4594, 1096520) != 0 {
 		r.ClearScreen(color.White)
 		*memmap.PtrUint32(0x5D4594, 1096520) = 0
 		r.SetRectFullScreen()
 		c.GUI.ValYYY = 1
-		return
+		return false
 	}
 	c.sub_468F80(vp)
 	v10 := legacy.Nox_xxx_drawAllMB_475810_draw_B(vp) != 0
@@ -309,9 +316,6 @@ func (c *Client) nox_xxx_drawAllMB_475810_draw(vp *noxrender.Viewport) {
 	c.drawSelection(vp)
 	c.nox_xxx_drawAllMB_475810_draw_E(vp)
 	r.partfx.Draw()
-	if !client.DrawRepaint {
-		r.partfx.Update()
-	}
 	legacy.Sub_4C5060(vp)
 	c.nox_client_maybeDrawFrontWalls(vp)
 	r.DrawFade(false)
@@ -321,12 +325,10 @@ func (c *Client) nox_xxx_drawAllMB_475810_draw(vp *noxrender.Viewport) {
 	if c.Debug.ShowSight {
 		c.DrawDebugSight(vp)
 	}
-	if !client.DrawRepaint {
-		c.sub_45AB40()
-	}
 	r.SetRectFullScreen()
 	*memmap.PtrUint32(0x973F18, 68) = 1
 	c.sub_476680()
+	return true
 }
 
 func (c *Client) sub_4765F0(vp *noxrender.Viewport) {

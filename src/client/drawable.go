@@ -69,6 +69,7 @@ func (c *Client) Nox_xxx_updateSpritePosition_49AA90(dr *Drawable, x, y int) {
 	if DrawRepaint {
 		return
 	}
+	dr.RestoreDrawPosition()
 	dr.Field_8 = uint32(dr.PosVec.X)
 	dr.Field_9 = uint32(dr.PosVec.Y)
 	if x < 0 || x >= 5888 || y < 0 || y >= 5888 {

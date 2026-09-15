@@ -12,6 +12,8 @@ int nox_thing_arrow_draw(int* a1, nox_drawable* dr) {
 	int v5;       // eax
 
 	uint32_t* a2 = dr;
+	int2 pos;
+	nox_drawable_authoritative_pos(dr, &pos);
 
 	v2 = *getMemU32Ptr(0x5D4594, 1313720);
 	if (!*getMemU32Ptr(0x5D4594, 1313720)) {
@@ -19,13 +21,13 @@ int nox_thing_arrow_draw(int* a1, nox_drawable* dr) {
 		*getMemU32Ptr(0x5D4594, 1313720) = v2;
 	}
 	v3 = a2[81];
-	if (!nox_draw_repaint && ((a2[3] - v3) * (a2[3] - v3) + (a2[4] - a2[82]) * (a2[4] - a2[82]) > 200)) {
+	if (!nox_draw_repaint && ((pos.field_0 - v3) * (pos.field_0 - v3) + (pos.field_4 - a2[82]) * (pos.field_4 - a2[82]) > 200)) {
 		v4 = (uint32_t*)nox_xxx_spriteLoadAdd_45A360_drawable(v2, v3, a2[82]);
-		v4[108] = a2[3];
-		v4[109] = a2[4];
+		v4[108] = pos.field_0;
+		v4[109] = pos.field_4;
 		nox_xxx_sprite_45A110_drawable(v4);
-		v5 = a2[4];
-		a2[81] = a2[3];
+		v5 = pos.field_4;
+		a2[81] = pos.field_0;
 		a2[82] = v5;
 		nox_xxx_spriteTransparentDecay_49B950(v4, gameFPS() / 3u);
 	}
@@ -40,6 +42,8 @@ int nox_thing_weak_arrow_draw(int* a1, nox_drawable* dr) {
 	int v5;       // eax
 
 	uint32_t* a2 = dr;
+	int2 pos;
+	nox_drawable_authoritative_pos(dr, &pos);
 
 	v2 = *getMemU32Ptr(0x5D4594, 1313724);
 	if (!*getMemU32Ptr(0x5D4594, 1313724)) {
@@ -47,13 +51,13 @@ int nox_thing_weak_arrow_draw(int* a1, nox_drawable* dr) {
 		*getMemU32Ptr(0x5D4594, 1313724) = v2;
 	}
 	v3 = a2[81];
-	if (!nox_draw_repaint && ((a2[3] - v3) * (a2[3] - v3) + (a2[4] - a2[82]) * (a2[4] - a2[82]) > 200)) {
+	if (!nox_draw_repaint && ((pos.field_0 - v3) * (pos.field_0 - v3) + (pos.field_4 - a2[82]) * (pos.field_4 - a2[82]) > 200)) {
 		v4 = (uint32_t*)nox_xxx_spriteLoadAdd_45A360_drawable(v2, v3, a2[82]);
-		v4[108] = a2[3];
-		v4[109] = a2[4];
+		v4[108] = pos.field_0;
+		v4[109] = pos.field_4;
 		nox_xxx_sprite_45A110_drawable(v4);
-		v5 = a2[4];
-		a2[81] = a2[3];
+		v5 = pos.field_4;
+		a2[81] = pos.field_0;
 		a2[82] = v5;
 		nox_xxx_spriteTransparentDecay_49B950(v4, gameFPS() / 3u);
 	}

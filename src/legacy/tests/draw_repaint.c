@@ -5,6 +5,8 @@
 #include <string.h>
 #include "defs.h"
 #include "GAME1_2.h"
+#include "GAME2.h"
+#include "client__draw__arrowdraw.h"
 #include "GAME2_3.h"
 #include "GAME3.h"
 #include "GAME3_1.h"
@@ -34,9 +36,10 @@ nox_screenParticle* nox_client_newScreenParticle_431540(int a, int b, int c, int
 // Plasma stores its animation history outside the drawable. Stub the curve
 // geometry and rasterizer so the test can check that history independently.
 uint32_t dword_5d4594_1316408, dword_5d4594_1316412;
-static uint32_t plasma_mem[660], trig_mem[1024];
+static uint32_t plasma_mem[660], trig_mem[1024], arrow_types[2];
 void* mem_getPtr(uintptr_t base, uintptr_t off) {
 	if (base == 0x5D4594) {
+		if (off == 1313720 || off == 1313724) return &arrow_types[(off - 1313720) / 4];
 		assert(off >= 1313828 && off < 1313828 + sizeof(plasma_mem));
 		return (char*)plasma_mem + off - 1313828;
 	}
@@ -52,6 +55,50 @@ void sub_4BA670(int a, int b, int c, int d, int e) { dword_5d4594_1316408 = 1; }
 int sub_4BE800(int a) { return 0; }
 char sub_4BE810(int a, int b, int c, char d) { return 0; }
 void sub_4BEAD0(int2* a, int2* b, int2* c, int2* d, int e, int f) { paints++; }
+
+// Trail history and emission use the full tick position, even when the same
+// callback paints the arrow at an interpolated position.
+static nox_drawable trail;
+static int2 authoritative, painted;
+void nox_drawable_authoritative_pos(nox_drawable* dr, int2* out) { *out = authoritative; }
+int nox_xxx_getTTByNameSpriteMB_44CFC0(char* name) { return 1; }
+nox_drawable* nox_xxx_spriteLoadAdd_45A360_drawable(int type, int x, int y) {
+	spawns++;
+	memset(&trail, 0, sizeof(trail));
+	((int*)&trail)[3] = x;
+	((int*)&trail)[4] = y;
+	return &trail;
+}
+void nox_xxx_sprite_45A110_drawable(nox_drawable* dr) {}
+int nox_thing_slave_draw(int* vp, nox_drawable* dr) {
+	painted = *(int2*)((char*)dr + 12);
+	paints++;
+	return 1;
+}
+static void test_arrow(void) {
+	int (*callbacks[])(int*, nox_drawable*) = {nox_thing_arrow_draw, nox_thing_weak_arrow_draw};
+	for (int n = 0; n < 2; n++) {
+		nox_drawable arrow = {0};
+		int* words = (int*)&arrow;
+		words[3] = 105; words[4] = 103; // interpolated position
+		words[81] = 100; words[82] = 100; // previous trail endpoint
+		authoritative = (int2){120, 110};
+		int spawned = spawns, drawn = paints;
+		nox_draw_repaint = 0;
+		callbacks[n](NULL, &arrow);
+		assert(spawns == spawned + 1 && paints == drawn + 1);
+		assert(painted.field_0 == 105 && painted.field_4 == 103);
+		assert(words[81] == 120 && words[82] == 110);
+		assert(((int*)&trail)[3] == 100 && ((int*)&trail)[4] == 100);
+		assert(((int*)&trail)[108] == 120 && ((int*)&trail)[109] == 110);
+		nox_drawable saved = arrow;
+		nox_draw_repaint = 1;
+		authoritative = (int2){140, 120}; // would emit if the repaint guard failed
+		for (int i = 0; i < 5; i++) callbacks[n](NULL, &arrow);
+		assert(spawns == spawned + 1 && paints == drawn + 6);
+		assert(memcmp(&saved, &arrow, sizeof(arrow)) == 0);
+	}
+}
 
 static void test_plasma(void) {
 	*getMemU32Ptr(0x5D4594, 1316404) = 1; // initialized
@@ -120,5 +167,6 @@ int main(void) {
 	assert(((short*)&bubble)[52] == 1);
 	assert(spawns == 1 && random_calls > 0);
 	test_plasma();
+	test_arrow();
 	puts("legacy repaint regression checks passed");
 }

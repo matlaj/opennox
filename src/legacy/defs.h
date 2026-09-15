@@ -1294,4 +1294,6 @@ typedef struct timer timer;
 // See timer.go for definition
 typedef struct timerGroup timerGroup;
 
+void nox_drawable_authoritative_pos(nox_drawable* dr, int2* out);
+
 #endif // NOX_DEFS_H

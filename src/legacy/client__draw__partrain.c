@@ -8,7 +8,6 @@
 //----- (004B7810) --------------------------------------------------------
 int nox_thing_blue_rain_draw(int a1, nox_drawable* dr) {
 	if (nox_draw_repaint) return 1;
-	int v3; // ebx
 	int v4; // ebp
 	int v5; // eax
 	int v6; // edi
@@ -16,21 +15,20 @@ int nox_thing_blue_rain_draw(int a1, nox_drawable* dr) {
 	int v8; // esi
 	int v9; // [esp+8h] [ebp+8h]
 
-	int a2 = dr;
-
 	if (nox_common_gameFlags_check_40A5C0(0x200000)) {
 		return 1;
 	}
 	if (!*getMemU32Ptr(0x5D4594, 1313716)) {
 		*getMemU32Ptr(0x5D4594, 1313716) = nox_xxx_getTTByNameSpriteMB_44CFC0("BlueRainSpark");
 	}
-	v3 = a2;
+	int2 pos;
+	nox_drawable_authoritative_pos(dr, &pos);
 	v9 = 2;
 	do {
-		v4 = *(uint32_t*)(v3 + 12) +
+		v4 = pos.field_0 +
 			 nox_common_randomIntMinMax_415FF0(-10, 10, "C:\\NoxPost\\src\\client\\Draw\\PartRain.c", 42);
 		v5 = nox_common_randomIntMinMax_415FF0(-10, 10, "C:\\NoxPost\\src\\client\\Draw\\PartRain.c", 43);
-		v6 = *(uint32_t*)(v3 + 16) + v5;
+		v6 = pos.field_4 + v5;
 		v7 = nox_xxx_spriteLoadAdd_45A360_drawable(*getMemIntPtr(0x5D4594, 1313716), v4, v6);
 		v8 = v7;
 		if (v7) {
