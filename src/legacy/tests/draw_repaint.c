@@ -33,28 +33,42 @@ nox_screenParticle* nox_client_newScreenParticle_431540(int a, int b, int c, int
 	return NULL;
 }
 
-// Plasma stores its animation history outside the drawable. Stub the curve
-// geometry and rasterizer so the test can check that history independently.
-uint32_t dword_5d4594_1316408, dword_5d4594_1316412;
-static uint32_t plasma_mem[660], trig_mem[1024], arrow_types[2];
+// Plasma stores its animation history outside the drawable, so the test links
+// the real curve code and checks that history independently.
+uint32_t dword_5d4594_1313880, dword_5d4594_1316408, dword_5d4594_1316412;
+uint32_t dword_587000_180476, dword_587000_180480;
+static uint32_t plasma_mem[660], beam_mem[5], trig_mem[1024], curve_mem[24], basis_mem[17], arrow_types[2];
 void* mem_getPtr(uintptr_t base, uintptr_t off) {
 	if (base == 0x5D4594) {
 		if (off == 1313720 || off == 1313724) return &arrow_types[(off - 1313720) / 4];
+		if (off >= 1316980 && off < 1316980 + sizeof(beam_mem)) return (char*)beam_mem + off - 1316980;
 		assert(off >= 1313828 && off < 1313828 + sizeof(plasma_mem));
 		return (char*)plasma_mem + off - 1313828;
 	}
-	assert(base == 0x587000 && off >= 194136 && off < 194136 + sizeof(trig_mem));
+	if (base == 0x581450) {
+		assert(off >= 9872 && off <= 9872 + sizeof(basis_mem));
+		return (char*)basis_mem + off - 9872;
+	}
+	assert(base == 0x587000);
+	if (off >= 180460 && off <= 180460 + sizeof(curve_mem)) return (char*)curve_mem + off - 180460;
+	assert(off >= 194136 && off < 194136 + sizeof(trig_mem));
 	return (char*)trig_mem + off - 194136;
 }
 uint32_t* mem_getU32Ptr(uintptr_t base, uintptr_t off) { return mem_getPtr(base, off); }
+int32_t* mem_getI32Ptr(uintptr_t base, uintptr_t off) { return mem_getPtr(base, off); }
 uint8_t* mem_getU8Ptr(uintptr_t base, uintptr_t off) { return mem_getPtr(base, off); }
 float* mem_getFloatPtr(uintptr_t base, uintptr_t off) { return mem_getPtr(base, off); }
 uint32_t nox_color_rgb_4344A0(int r, int g, int b) { return 1; }
 int nox_float2int(float f) { return (int)f; }
-void sub_4BA670(int a, int b, int c, int d, int e) { dword_5d4594_1316408 = 1; }
-int sub_4BE800(int a) { return 0; }
-char sub_4BE810(int a, int b, int c, char d) { return 0; }
-void sub_4BEAD0(int2* a, int2* b, int2* c, int2* d, int e, int f) { paints++; }
+unsigned int sub_48C6B0(int a1, int a2) { return 100; }
+static nox_draw_viewport_t plasma_vp;
+nox_draw_viewport_t* nox_draw_getViewport_437250() { return &plasma_vp; }
+int nox_xxx_drawEnergyBolt_499710(int a1, int a2, short a3, int a4) { spawns++; return 0; }
+void nox_client_drawAddPoint_49F500(int a1, int a2) {}
+int nox_client_drawLineFromPoints_49E4B0() { paints++; return 1; }
+int sub_49E4F0(int a1) { paints++; return 1; }
+void nox_draw_set54RGB32_434040(int a1) {}
+void sub_434080(int a1) {}
 
 // Trail history and emission use the full tick position, even when the same
 // callback paints the arrow at an interpolated position.
@@ -109,17 +123,24 @@ static void test_plasma(void) {
 			*getMemU32Ptr(0x5D4594, 1313900 + off) = 3;
 		}
 	}
+	int random = random_calls;
+	nox_draw_repaint = 1;
+	// The first call fills per-frame curve scratch and caches the spark sprite.
+	int primed = paints;
+	sub_4BA230(0, 0, 0, 100, 100);
+	int per_call = paints - primed;
+	assert(per_call > 0);
 	uint32_t saved[660];
 	memcpy(saved, plasma_mem, sizeof(saved));
-	int drawn = paints, random = random_calls;
-	nox_draw_repaint = 1;
+	int drawn = paints;
 	for (int i = 0; i < 5; i++) {
 		sub_4BA230(0, 0, 0, 100, 100);
 		assert(memcmp(saved, plasma_mem, sizeof(saved)) == 0);
 	}
-	assert(paints == drawn + 15 && random_calls == random);
+	assert(paints == drawn + 5 * per_call && random_calls == random);
 	nox_draw_repaint = 0;
 	sub_4BA230(0, 0, 0, 100, 100);
+	assert(*getMemFloatPtr(0x5D4594, 1313856) > 0); // segment timer advanced
 	assert(*getMemU32Ptr(0x5D4594, 1313908) == 9);
 }
 
